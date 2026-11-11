@@ -1,0 +1,17 @@
+{
+  "name": "@evergreen-names/sandbox",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "near-api-js": "7.5.2",
+    "near-sandbox": "0.3.5",
+    "@evergreen-names/client": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5"
+  }
+}

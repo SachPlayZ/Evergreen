@@ -1,0 +1,21 @@
+{
+  "name": "@evergreen-names/client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "near-api-js": "7.5.2"
+  },
+  "devDependencies": {
+    "@evergreen-names/sandbox": "workspace:*",
+    "@types/node": "^22",
+    "typescript": "^5",
+    "vitest": "^3"
+  }
+}
