@@ -1,6 +1,6 @@
 # Evergreen
 
-Toolkit and demo for NEAR Top Level Accounts: leased names that are both NFTs and live accounts, plus a Name that keeps itself alive from its own stake.
+NEAR Top Level Account Names (NFTs that are live accounts) that keep themselves alive from their own stake and from supporters.
 
 ## Names
 
