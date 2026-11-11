@@ -1,5 +1,5 @@
 import { cacheLife } from "next/cache";
-import { mainnetSnapshot } from "@/lib/data";
+import { errorText, mainnetSnapshot } from "@/lib/data";
 
 async function cached() {
   "use cache";
@@ -10,7 +10,7 @@ async function cached() {
 export async function GET() {
   try {
     return Response.json(await cached());
-  } catch (error: any) {
-    return Response.json({ error: String(error?.message ?? error) }, { status: 502 });
+  } catch (error) {
+    return Response.json({ error: errorText(error) }, { status: 502 });
   }
 }

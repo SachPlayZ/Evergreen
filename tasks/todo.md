@@ -79,5 +79,16 @@ Deadline: submit by **14 Nov 12:00 UTC** (hard close 23:59 UTC). Terms: `GLOSSAR
 - [ ] User: prize account, final submission review (tracks `nfts` + `open`)
 - [ ] User: message House of Stake (send 11 Nov; Claude drafts)
 
+## Web redesign (12 Nov)
+- [x] Cut art from the 4 reference images (`apps/web/scripts/cut-art.mjs` -> `public/art/`)
+- [x] Design system in `globals.css` (tokens, Newsreader + Geist, radius rule, one accent)
+- [x] Hero: willow woodcut in motion, moths, live Name card
+- [x] Live, How (sticky halftone), Lapse (cat) + mainnet census, Cost picker, night footer
+- [x] Checked in browser at 1280 and 375: no console errors, no sideways scroll
+- [x] Live sandbox: alice.demo renewed itself (22s -> 80s, count 1, moth fired); bob.demo went to Grace in ember with a Lifeline command
+- [x] Reclaimable state (bob.demo: "Gone", greyed) and `next build` both pass
+
 ## Review
-_(fill after build)_
+- Web redesign: typecheck, lint and build clean (old `any` catches fixed).
+- Hero headline is 3 lines at 1280 wide, kept on purpose.
+- 1,008 Namespaces vs 79 Names is correct: `tla_count` is `tlas.len()` in the registry, `sub_account_count` is rented Names.

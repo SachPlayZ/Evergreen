@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@evergreen-names/client": "workspace:*",
+    "@phosphor-icons/react": "^2.1.10",
     "lenis": "^1.3.27",
     "motion": "^14.12.0",
     "next": "16.4.6",

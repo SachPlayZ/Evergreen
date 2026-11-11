@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Anton, Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 
-const display = Anton({ variable: "--font-display", weight: "400", subsets: ["latin"] });
+const display = Newsreader({ variable: "--font-display", subsets: ["latin"], style: ["normal", "italic"] });
 const sans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 

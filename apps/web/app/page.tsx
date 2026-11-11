@@ -1,139 +1,59 @@
-import { HeroScene } from "./components/HeroScene";
-import { LiveDemo, MainnetForest } from "./components/Live";
-import { Heading, Marquee, Parallax, Reveal, SmoothScroll, Words } from "./components/Motion";
+import { Cost } from "./components/Cost";
+import { Hero } from "./components/Hero";
+import { HowScroll } from "./components/HowScroll";
+import { Lapse } from "./components/Lapse";
+import { LiveProvider } from "./components/LiveData";
+import { LiveNames } from "./components/LiveNames";
+import { Parallax, SmoothScroll } from "./components/Motion";
 
-const STAKE_ROWS = [
-  { name: "12+ characters", rent: 7.5 },
-  { name: "9 to 10 characters", rent: 15 },
-  { name: "6 to 8 characters", rent: 30 },
-  { name: "5 or fewer", rent: 75 },
-];
-
-const STEPS = [
-  {
-    title: "Hand over",
-    text: "You transfer your Name to a Steward contract made for it. You stay its Patron and can take the Name back at any time.",
-  },
-  {
-    title: "Stake once",
-    text: "The Name stakes its own NEAR in a staking pool. Tips from anyone are added to the Stake.",
-  },
-  {
-    title: "Anyone pokes",
-    text: "Near expiry, anyone can poke the Steward. It takes exactly the next Rent out of the rewards and pays the registry's open renewal.",
-  },
-  {
-    title: "Never stranded",
-    text: "If rewards fall short, it pulls the whole Stake back onto the Name before expiry, because stake left in a pool passes to whoever rents the Name next.",
-  },
-];
-
-const TICKER = [
-  "Names expire",
-  "Stake once",
-  "Rent pays itself",
-  "Principal never spent",
-  "Anyone can throw a Lifeline",
-  "An NFT that is an account",
-  "Owned by code",
+/** Moths rising through the night at the foot of the page. Position is % of the footer. */
+const NIGHT = [
+  { n: 5, left: "6%", top: "58%", size: 190, drift: 30 },
+  { n: 3, left: "24%", top: "22%", size: 120, drift: 70 },
+  { n: 4, left: "68%", top: "50%", size: 170, drift: 45 },
+  { n: 2, left: "84%", top: "12%", size: 96, drift: 90 },
+  { n: 1, left: "47%", top: "8%", size: 64, drift: 110 },
 ];
 
 export default function Home() {
   return (
-    <>
+    <LiveProvider>
       <SmoothScroll />
-      <div className="grain" aria-hidden="true" />
-      <svg className="defs" aria-hidden="true">
-        <filter id="brush" x="-5%" y="-30%" width="110%" height="160%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.012 0.35" numOctaves="2" seed="7" />
-          <feDisplacementMap in="SourceGraphic" scale="16" />
-        </filter>
-      </svg>
-
-      <header className="hero">
-        <HeroScene />
-        <div className="hero-shade" aria-hidden="true" />
-        <div className="hero-copy">
-          <p className="kicker">Evergreen · NEAR Top Level Accounts</p>
-          <h1>
-            <Words text="NEAR names now expire." delay={0.15} />
-            <em>
-              <Words text="This one keeps itself alive." delay={0.75} />
-            </em>
-          </h1>
-          <Reveal delay={1.3} y={20}>
-            <p className="lede">
-              A name like <code>alice.bot</code> is an NFT and a real account, leased for a year. Miss the renewal and
-              anyone can take it. An Evergreen Name is owned by a small Steward contract: it stakes the Name&apos;s own
-              NEAR and pays each year&apos;s Rent from the rewards. The principal is never spent.
-            </p>
-            <a className="cue" href="#live">
-              Watch it happen <span>↓</span>
-            </a>
-          </Reveal>
+      <nav className="nav" aria-label="Main">
+        <a className="wordmark" href="#top">
+          Evergreen
+        </a>
+        <div className="nav-links">
+          <a href="#live">Live</a>
+          <a href="#how">How it works</a>
+          <a href="#mainnet">Mainnet</a>
+          <a href="#cost">Cost</a>
         </div>
-      </header>
+      </nav>
 
-      <Marquee items={TICKER} />
-
+      <div id="top" />
+      <Hero />
       <main>
-        <section className="live" id="live">
-          <Heading title="Watch" sub="one Name renew itself, one run out" />
-          <LiveDemo />
-        </section>
-
-        <section className="mainnet" id="mainnet">
-          <Heading title="Mainnet" sub="every real Name is on a clock" />
-          <MainnetForest />
-        </section>
-
-        <section className="how" id="how">
-          <Heading title="How" sub="it works, and what it costs" />
-          <div className="steps">
-            {STEPS.map((step, i) => (
-              <Reveal key={step.title} delay={i * 0.1} className="step">
-                <Parallax amount={10 + i * 6}>
-                  <b className="step-n">{i + 1}</b>
-                </Parallax>
-                <h3>{step.title}</h3>
-                <p>{step.text}</p>
-              </Reveal>
-            ))}
-          </div>
-          <Reveal>
-            <table className="soon">
-              <thead>
-                <tr>
-                  <th>Name length</th>
-                  <th>Rent per year</th>
-                  <th>Stake that pays it at 5% yield</th>
-                </tr>
-              </thead>
-              <tbody>
-                {STAKE_ROWS.map((row) => (
-                  <tr key={row.name}>
-                    <td>{row.name}</td>
-                    <td>${row.rent.toFixed(2)}</td>
-                    <td>${(row.rent / 0.05).toFixed(0)}, kept by you</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="fine">
-              Rent shown for an Open Standard Namespace at the registry&apos;s default prices. The Top Level Accounts
-              registry and wallet are third-party, audited and unmodified (houseofstake/tla-contracts at d85860a). The
-              Steward is new and unaudited.
-            </p>
-          </Reveal>
-        </section>
+        <LiveNames />
+        <HowScroll />
+        <Lapse />
+        <Cost />
       </main>
 
       <footer className="foot">
-        <Parallax amount={40}>
-          <p className="foot-big">Stay green.</p>
-        </Parallax>
-        <p className="fine">Evergreen · built for the NEAR Hackathon, November 2026 · MIT</p>
+        {NIGHT.map((m) => (
+          <Parallax key={m.n} amount={m.drift} className="foot-moth">
+            <span className="moth" style={{ left: m.left, top: m.top, width: m.size, animationDuration: `${18 + m.n * 2}s`, animationDelay: `${-m.n * 3}s` }} aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/art/moth-${m.n}.webp`} alt="" loading="lazy" style={{ animationDelay: `${-m.n * 0.07}s` }} />
+            </span>
+          </Parallax>
+        ))}
+        <p className="foot-big">
+          Stay <em>green.</em>
+        </p>
+        <p className="fine">Evergreen. Built for the NEAR Hackathon, November 2026. MIT licence.</p>
       </footer>
-    </>
+    </LiveProvider>
   );
 }

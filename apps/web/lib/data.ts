@@ -32,6 +32,8 @@ export function demoConfig(): DemoConfig | undefined {
   return undefined;
 }
 
+export const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
 export async function demoSnapshot() {
   const config = demoConfig();
   if (!config) return { configured: false as const };
@@ -47,8 +49,8 @@ export async function demoSnapshot() {
       })),
     );
     return toJson({ configured: true as const, label: config.label, termSecs: config.termSecs, names });
-  } catch (error: any) {
-    return { configured: false as const, error: String(error?.message ?? error) };
+  } catch (error) {
+    return { configured: false as const, error: errorText(error) };
   }
 }
 
