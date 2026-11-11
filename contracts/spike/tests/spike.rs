@@ -76,7 +76,7 @@ async fn p1_p2_steward_renews_the_name_from_rewards_only() -> Result<()> {
         .call("new")
         .args_json(json!({
             "registry": registry.id(), "tla_id": tla, "label": label, "pool": pool.id(),
-            "patron": fleet.bob.id(), "window_ns": U64(10 * SHORT_TERM_NS),
+            "patron": fleet.bob.id(), "window_ns": U64(10 * SHORT_TERM_NS), "lapse_guard_ns": U64(5_000_000_000),
         }))
         .transact()
         .await?
@@ -143,14 +143,14 @@ async fn p1_p2_steward_renews_the_name_from_rewards_only() -> Result<()> {
 
     // Anyone pokes. Three steps: unstake, withdraw, renew.
     let mut statuses = vec![];
-    for _ in 0..4 {
+    for _ in 0..6 {
         let out = fleet.relay.call(steward.id(), "poke").max_gas().transact().await?;
         if !out.receipt_failures().is_empty() {
             bail!("poke receipt failed: {:#?}", out.receipt_failures());
         }
         let s: String = out.json()?;
         statuses.push(s.clone());
-        if s == "renewing" {
+        if s == "renewed" {
             break;
         }
     }

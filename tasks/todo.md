@@ -16,6 +16,7 @@ Deadline: submit by **14 Nov 12:00 UTC** (hard close 23:59 UTC). Terms: `GLOSSAR
 - **AGENTS.md:** short root file for screeners (how to run, what to check). No skill, no skill eval.
 - **Screener-proofing:** prebuilt wasm + SHA-256 + `pnpm build:contracts` to verify; GH Actions runs `pnpm demo` + tests, badge in README. README states Steward is new + unaudited; registry/wallet audited, unmodified, pinned.
 - **Repo:** pnpm monorepo — `packages/client`, `packages/cli`, `apps/web`, `contracts/steward`, `contracts/demo-pool`, `keeper/`, `contracts/upstream` submodule @ `d85860a`. MIT (upstream keeps own licence).
+- **Web design direction (user, 12 Nov):** base the interface on the 3 reference JPGs in `apps/web/public/` (Pinterest inspiration, gitignored, not to be shipped as assets): lime/chartreuse greens on black with cream accents; woodcut-hatch willow landscape, halftone/pixel-dot mosaic, raw neon brush strokes. Build original art in that style (dot-grid/halftone living card, hatch textures); do not reuse the images themselves.
 - **Hosting:** read-only living card/ICU page on Cloudflare or Vercel, up until 25 Nov.
 - **Traction:** 13 Nov X launch of mainnet Evergreen Name + ICU "tip to keep it alive"; README shows live on-chain Tip count. Needs mainnet go.
 - **Adopt flow:** "Make my Name Evergreen" one-flow button on web — core, not stretch.
