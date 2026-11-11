@@ -16,5 +16,9 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./testnet": "./src/testnet.ts"
   }
 }

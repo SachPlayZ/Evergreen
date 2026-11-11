@@ -1,0 +1,26 @@
+# Keeps the testnet copy alive: pokes alice's Steward when Rent is due, drips the demo
+# pool's rewards, and re-rents bob after he lapses so the page always shows one Name running out.
+#
+# On the VM (as the user that owns the clone, here `ubuntu`):
+#   git clone https://github.com/SachPlayZ/Evergreen.git ~/evergreen && cd ~/evergreen && pnpm install
+#   mkdir -p ~/.near-credentials/testnet   # then copy <account>.json there (chmod 600)
+#   sudo cp deploy/evergreen-keeper.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now evergreen-keeper
+#   journalctl -u evergreen-keeper -f
+[Unit]
+Description=Evergreen keeper (testnet demo)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/evergreen
+Environment=EVERGREEN_NETWORK=testnet
+# "-": a failed pull (no network yet) must not stop the keeper.
+ExecStartPre=-/usr/bin/git pull --ff-only
+ExecStart=/usr/bin/env pnpm --silent evergreen keeper run
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

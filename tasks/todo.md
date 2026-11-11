@@ -66,7 +66,10 @@ Deadline: submit by **14 Nov 12:00 UTC** (hard close 23:59 UTC). Terms: `GLOSSAR
 
 ## 13 Nov
 - [x] Living card + ICU + mainnet census page (`pnpm evergreen sandbox --story`, `pnpm evergreen keeper run`, `pnpm dev:web`)
-- [ ] Host the page (needs a testnet copy of the contracts, or mainnet section only)
+- [x] Host the page: https://evergreen-names.vercel.app (Vercel, Git connected, deploys on push to main)
+- [x] `evergreen testnet deploy` (resumable, Rent scaled 1/500, ~74 testnet NEAR); rehearsed on sandbox
+- [ ] User: near-cli key at ~/.near-credentials/testnet/<account>.json, then run the deploy
+- [ ] Set EVERGREEN_* env vars on Vercel; keeper on Oracle VM (deploy/evergreen-keeper.service)
 - [ ] Mainnet Evergreen Name (if go)
 - [ ] User: X launch of mainnet Evergreen Name + ICU (if mainnet go)
 - [ ] Adopt flow button

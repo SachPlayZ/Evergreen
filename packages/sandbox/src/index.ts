@@ -80,6 +80,150 @@ export function wasm(name: string): Uint8Array {
   return readFileSync(join(WASM_DIR, `${name}.wasm`));
 }
 
+/** Where each part of the stack lives. On the sandbox these are genesis accounts; on testnet, sub-accounts. */
+export type StackIds = { [K in keyof typeof IDS]: string };
+
+export interface StackOptions {
+  ids: StackIds;
+  client: Evergreen;
+  /** An account able to sign for any id in `ids`. */
+  account(id: string): Account;
+  leaseSecs: number;
+  graceSecs: number;
+  nearUsdMicro: number;
+  /** Multiplies every Rent tier. Testnet uses a small one so a demo Lease costs cents of testnet NEAR. */
+  rentScale?: number;
+  /** Runs one named step. Testnet uses it to skip steps that already ran. */
+  step?: (name: string, run: () => Promise<void>) => Promise<void>;
+}
+
+/** NEAR attached to publish the shared wallet code as a global contract. */
+export function walletCodeDepositYocto(): bigint {
+  return BigInt(wasm("hos_wallet").length) * GLOBAL_CODE_COST_PER_BYTE;
+}
+
+/** Deploys and wires the Top Level Accounts contracts and the demo pool, as the upstream harness does. */
+export async function deployStack(o: StackOptions): Promise<void> {
+  const { ids, client, account } = o;
+  const step = o.step ?? ((_name: string, run: () => Promise<void>) => run());
+  const council = account(ids.council);
+  const relay = account(ids.relay);
+  const ns = (secs: number) => (BigInt(secs) * 1_000_000_000n).toString();
+
+  // Shared wallet code, published as a global contract after council approval.
+  await step("wallet deployer", async () => {
+    const deployer = account(ids.walletImpl);
+    await deployer.deployContract(wasm("wallet_impl_deployer"));
+    await call(deployer, ids.walletImpl, "new", {
+      council: ids.council,
+      patch_authority: ids.patch,
+      approval_delay_ns: "0",
+    });
+  });
+  const walletWasm = wasm("hos_wallet");
+  await step("wallet code approved", async () => {
+    const walletHash = baseEncode(createHash("sha256").update(walletWasm).digest());
+    await call(council, ids.walletImpl, "gd_approve", { hash: walletHash }, { deposit: ONE_YOCTO });
+  });
+  await step("wallet code published", async () => {
+    await call(
+      relay,
+      ids.walletImpl,
+      "gd_deploy",
+      { code: Buffer.from(walletWasm).toString("base64") },
+      { deposit: walletCodeDepositYocto() },
+    );
+  });
+
+  // The Namespace account runs the registrar.
+  await step("registrar", async () => {
+    const registrar = account(ids.namespace);
+    await registrar.deployContract(wasm("registrar"));
+    await call(registrar, ids.namespace, "new", {
+      config: {
+        registry: ids.registry,
+        council: ids.council,
+        wallet_impl: ids.walletImpl,
+        hos_extension: ids.extension,
+        recovery: ids.recovery,
+        chain_id: "testnet",
+        min_balance: nearToYocto("0.1").toString(),
+        wallet_timeout_secs: 3600,
+      },
+    });
+  });
+
+  await step("extension", async () => {
+    const extension = account(ids.extension);
+    await extension.deployContract(wasm("hos_extension"));
+    await call(extension, ids.extension, "new", {
+      admin: ids.council,
+      registry: ids.registry,
+      recovery: ids.recovery,
+      treasury: ids.council,
+      council: ids.council,
+    });
+  });
+
+  await step("recovery", async () => {
+    const recovery = account(ids.recovery);
+    await recovery.deployContract(wasm("mpc_recovery"));
+    await call(recovery, ids.recovery, "new", {
+      owner: ids.council,
+      signer: ids.relay,
+      transfer_authority: ids.extension,
+      watchers: [
+        "ed25519:DcA2MzgpJbrUATQLLceocVckhhAqrkingax4oJ9kZ847",
+        "ed25519:5BGSaf6YjVm7565VzWQHNxoyEjwr3jUpRJSGjREvU9dB",
+      ],
+      threshold: 2,
+    });
+  });
+
+  await step("registry", async () => {
+    const registry = account(ids.registry);
+    await registry.deployContract(wasm("tla_registry"));
+    await call(registry, ids.registry, "new", {
+      admin: ids.council,
+      hos_extension: ids.extension,
+      grace_period_ns: ns(o.graceSecs),
+      treasury: ids.council,
+      council: ids.council,
+      lease_term_ns: ns(o.leaseSecs),
+    });
+  });
+  await step("rate", async () => {
+    await call(council, ids.registry, "admin_set_initial_rate", { rate: String(o.nearUsdMicro) }, { deposit: ONE_YOCTO });
+  });
+  await step("namespace", async () => {
+    await call(
+      council,
+      ids.registry,
+      "register_tla",
+      { tla_id: ids.namespace, tla_type: "Open", premium_category: "Standard", licensee: null },
+      { deposit: ONE_YOCTO },
+    );
+    await call(council, ids.registry, "activate_open_tla", { tla_id: ids.namespace }, { deposit: ONE_YOCTO });
+  });
+  await step("fees", async () => {
+    // As in the upstream harness: the one-off deposit that funds a new Name's account.
+    const fee: any = await client.rpc.callFunction({ contractId: ids.registry, method: "get_fee_config", args: {} });
+    fee.account_creation_deposit_yocto = nearToYocto("0.2").toString();
+    if (o.rentScale !== undefined) {
+      for (const tier of ["rent_tier_5_usd_micro", "rent_tier_8_usd_micro", "rent_tier_10_usd_micro", "rent_tier_12plus_usd_micro"]) {
+        fee[tier] = String(Math.max(1, Math.round(Number(fee[tier]) * o.rentScale)));
+      }
+    }
+    await call(council, ids.registry, "update_fee_config", { config: fee }, { deposit: ONE_YOCTO });
+  });
+
+  await step("pool", async () => {
+    const pool = account(ids.pool);
+    await pool.deployContract(wasm("demo_pool"));
+    await call(pool, ids.pool, "new", {});
+  });
+}
+
 export async function startSandbox(options: SandboxOptions = {}): Promise<EvergreenSandbox> {
   const leaseSecs = options.leaseSecs ?? 60;
   const graceSecs = options.graceSecs ?? 60;
@@ -93,93 +237,7 @@ export async function startSandbox(options: SandboxOptions = {}): Promise<Evergr
   const account = (id: string) => client.account(id, DEFAULT_PRIVATE_KEY);
   const council = account(IDS.council);
   const relay = account(IDS.relay);
-  const ns = (secs: number) => (BigInt(secs) * 1_000_000_000n).toString();
-
-  // Shared wallet code, published as a global contract after council approval.
-  const deployer = account(IDS.walletImpl);
-  await deployer.deployContract(wasm("wallet_impl_deployer"));
-  await call(deployer, IDS.walletImpl, "new", {
-    council: IDS.council,
-    patch_authority: IDS.patch,
-    approval_delay_ns: "0",
-  });
-  const walletWasm = wasm("hos_wallet");
-  const walletHash = baseEncode(createHash("sha256").update(walletWasm).digest());
-  await call(council, IDS.walletImpl, "gd_approve", { hash: walletHash }, { deposit: ONE_YOCTO });
-  await call(
-    relay,
-    IDS.walletImpl,
-    "gd_deploy",
-    { code: Buffer.from(walletWasm).toString("base64") },
-    { deposit: BigInt(walletWasm.length) * GLOBAL_CODE_COST_PER_BYTE },
-  );
-
-  // The Namespace account runs the registrar.
-  const registrar = account(IDS.namespace);
-  await registrar.deployContract(wasm("registrar"));
-  await call(registrar, IDS.namespace, "new", {
-    config: {
-      registry: IDS.registry,
-      council: IDS.council,
-      wallet_impl: IDS.walletImpl,
-      hos_extension: IDS.extension,
-      recovery: IDS.recovery,
-      chain_id: "testnet",
-      min_balance: nearToYocto("0.1").toString(),
-      wallet_timeout_secs: 3600,
-    },
-  });
-
-  const extension = account(IDS.extension);
-  await extension.deployContract(wasm("hos_extension"));
-  await call(extension, IDS.extension, "new", {
-    admin: IDS.council,
-    registry: IDS.registry,
-    recovery: IDS.recovery,
-    treasury: IDS.council,
-    council: IDS.council,
-  });
-
-  const recovery = account(IDS.recovery);
-  await recovery.deployContract(wasm("mpc_recovery"));
-  await call(recovery, IDS.recovery, "new", {
-    owner: IDS.council,
-    signer: IDS.relay,
-    transfer_authority: IDS.extension,
-    watchers: [
-      "ed25519:DcA2MzgpJbrUATQLLceocVckhhAqrkingax4oJ9kZ847",
-      "ed25519:5BGSaf6YjVm7565VzWQHNxoyEjwr3jUpRJSGjREvU9dB",
-    ],
-    threshold: 2,
-  });
-
-  const registry = account(IDS.registry);
-  await registry.deployContract(wasm("tla_registry"));
-  await call(registry, IDS.registry, "new", {
-    admin: IDS.council,
-    hos_extension: IDS.extension,
-    grace_period_ns: ns(graceSecs),
-    treasury: IDS.council,
-    council: IDS.council,
-    lease_term_ns: ns(leaseSecs),
-  });
-  await call(council, IDS.registry, "admin_set_initial_rate", { rate: String(nearUsdMicro) }, { deposit: ONE_YOCTO });
-  await call(
-    council,
-    IDS.registry,
-    "register_tla",
-    { tla_id: IDS.namespace, tla_type: "Open", premium_category: "Standard", licensee: null },
-    { deposit: ONE_YOCTO },
-  );
-  await call(council, IDS.registry, "activate_open_tla", { tla_id: IDS.namespace }, { deposit: ONE_YOCTO });
-  // As in the upstream harness: the one-off deposit that funds a new Name's account.
-  const fee: any = await client.rpc.callFunction({ contractId: IDS.registry, method: "get_fee_config", args: {} });
-  fee.account_creation_deposit_yocto = nearToYocto("0.2").toString();
-  await call(council, IDS.registry, "update_fee_config", { config: fee }, { deposit: ONE_YOCTO });
-
-  const pool = account(IDS.pool);
-  await pool.deployContract(wasm("demo_pool"));
-  await call(pool, IDS.pool, "new", {});
+  await deployStack({ ids: IDS, client, account, leaseSecs, graceSecs, nearUsdMicro });
 
   const rpc = async (method: string, params: unknown) => {
     const res = await fetch(sandbox.rpcUrl, {

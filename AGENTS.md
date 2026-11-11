@@ -25,6 +25,7 @@ pnpm test      # 6 scenarios through the client against the same sandbox, ~2.5 m
 - `contracts/steward` Steward contract (Rust). `contracts/demo-pool` demo pool. `contracts/spike` the original Rust go/no-go test.
 - `packages/client` internal TypeScript client and the tests (`test/`). `packages/sandbox` deploys everything locally. `packages/cli` the `evergreen` command and the demo.
 - `apps/web` the status page (Next.js; see `apps/web/AGENTS.md` before editing).
+- `deploy/` the testnet copy: `testnet.json` (addresses, written by `pnpm evergreen testnet deploy --account <you.testnet>`) and the keeper's systemd unit. With `EVERGREEN_NETWORK=testnet`, CLI commands use it and sign with `~/.near-credentials/testnet/<account>.json` (or `EVERGREEN_KEY_FILE`).
 
 ## Rules for changes
 

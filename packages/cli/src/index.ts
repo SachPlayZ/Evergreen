@@ -14,18 +14,25 @@
  *   evergreen poke <name> --as <account>
  *   evergreen keeper run                keep poking every Evergreen Name
  *   evergreen exit <name> --as <patron>
+ *   evergreen testnet deploy --account <you.testnet> [--rpc <url>]
+ *                                       deploy the stack and the live scene to testnet (resumes if it stops)
  *
- * All commands except `demo` talk to the sandbox started by `evergreen sandbox`.
+ * Commands talk to the sandbox started by `evergreen sandbox`. With EVERGREEN_NETWORK=testnet
+ * they talk to the testnet copy in deploy/testnet.json instead, and every signer is its account.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Evergreen, ONE_YOCTO, call, nearToYocto, stakeNeededYocto, yoctoToNear } from "@evergreen-names/client";
 import { IDS, startSandbox, wasm } from "@evergreen-names/sandbox";
+import { deployTestnet, testnetKey } from "@evergreen-names/sandbox/testnet";
 import { DEFAULT_PRIVATE_KEY } from "near-sandbox";
 import { runDemo } from "./demo";
 
-const ENV_FILE = join(dirname(fileURLToPath(import.meta.url)), "../../../.evergreen/sandbox.json");
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../..");
+const SANDBOX_FILE = join(ROOT, ".evergreen/sandbox.json");
+const TESTNET_FILE = join(ROOT, "deploy/testnet.json");
+const ENV_FILE = process.env.EVERGREEN_NETWORK === "testnet" ? TESTNET_FILE : SANDBOX_FILE;
 const PEOPLE = ["ana", "ben", "fan", "keeper"];
 const near = (y: bigint) => `${yoctoToNear(y, 3)} NEAR`;
 
@@ -36,18 +43,29 @@ interface Env {
   poolId: string;
   /** Name -> Steward account. */
   stewards: Record<string, string>;
+  /** Testnet: the one account that signs for every role. */
+  root?: string;
 }
 
 function loadEnv(): Env {
   if (!existsSync(ENV_FILE)) {
-    throw new Error("No sandbox is running. Start one with `pnpm evergreen sandbox` in another terminal.");
+    throw new Error(
+      ENV_FILE === TESTNET_FILE
+        ? "No testnet deploy yet. Run `pnpm evergreen testnet deploy --account <you.testnet>`."
+        : "No sandbox is running. Start one with `pnpm evergreen sandbox` in another terminal.",
+    );
   }
   return JSON.parse(readFileSync(ENV_FILE, "utf8"));
 }
 
-function saveEnv(env: Env): void {
-  mkdirSync(dirname(ENV_FILE), { recursive: true });
-  writeFileSync(ENV_FILE, JSON.stringify(env, null, 2));
+function saveEnv(env: Env, file = ENV_FILE): void {
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify(env, null, 2)}\n`);
+}
+
+/** Signs as `role`. On testnet every role is the deploying account, with its one key. */
+function signerFor(client: Evergreen, env: Env, role: string) {
+  return env.root ? client.account(env.root, testnetKey(env.root)) : client.account(role, DEFAULT_PRIVATE_KEY);
 }
 
 function parse(argv: string[]) {
@@ -66,10 +84,26 @@ async function main(): Promise<void> {
 
   if (command === "demo") return runDemo();
 
+  if (command === "testnet") {
+    if (rest[0] !== "deploy" || !flags.account) throw new Error("Usage: evergreen testnet deploy --account <you.testnet>");
+    console.log(`Deploying to testnet under ${flags.account}. Each step runs once; run again to resume.`);
+    const { state } = await deployTestnet({ root: flags.account, statePath: TESTNET_FILE, rpcUrl: flags.rpc || undefined });
+    console.log(`Done. alice.${state.namespace} is Evergreen; bob.${state.namespace} has no Steward.`);
+    console.log("Point the web page at it with these env vars:");
+    console.log(`  EVERGREEN_RPC_URL=${state.rpcUrl}`);
+    console.log(`  EVERGREEN_REGISTRY_ID=${state.registryId}`);
+    console.log(`  EVERGREEN_NAMESPACE=${state.namespace}`);
+    console.log(`  EVERGREEN_TERM_SECS=${state.termSecs}`);
+    console.log(`  EVERGREEN_NETWORK_LABEL=testnet copy`);
+    console.log("Then keep it alive: EVERGREEN_NETWORK=testnet pnpm evergreen keeper run");
+    return;
+  }
+
   if (command === "sandbox") {
+    if (ENV_FILE !== SANDBOX_FILE) throw new Error("Unset EVERGREEN_NETWORK to start a sandbox.");
     console.log("Starting sandbox (60s Leases, 60s Grace, DEMO pool)...");
     const sb = await startSandbox({ people: PEOPLE });
-    saveEnv({ rpcUrl: sb.rpcUrl, registryId: sb.registryId, namespace: sb.namespace, poolId: sb.poolId, stewards: {} });
+    saveEnv({ rpcUrl: sb.rpcUrl, registryId: sb.registryId, namespace: sb.namespace, poolId: sb.poolId, stewards: {} }, SANDBOX_FILE);
     console.log(`Sandbox ready at ${sb.rpcUrl}. Namespace: ${sb.namespace}. People: ${PEOPLE.join(", ")}.`);
     if (flags.story !== undefined) {
       // A live scene for the web page: alice.demo is Evergreen, bob.demo is left alone.
@@ -85,7 +119,7 @@ async function main(): Promise<void> {
         lapseGuardSecs: 12,
       });
       await client.tip(fan, stewardId, nearToYocto(2));
-      saveEnv({ rpcUrl: sb.rpcUrl, registryId: sb.registryId, namespace: sb.namespace, poolId: sb.poolId, stewards: { "alice.demo": stewardId } });
+      saveEnv({ rpcUrl: sb.rpcUrl, registryId: sb.registryId, namespace: sb.namespace, poolId: sb.poolId, stewards: { "alice.demo": stewardId } }, SANDBOX_FILE);
       console.log("Story started: alice.demo is Evergreen (30 NEAR staked, 1 Tip); bob.demo has no Steward.");
       console.log("Now run `pnpm evergreen keeper run` in another terminal, and `pnpm dev:web` to watch.");
     }
@@ -106,7 +140,7 @@ async function main(): Promise<void> {
   const client = new Evergreen(env);
   const signer = () => {
     if (!flags.as) throw new Error("Say who signs with --as <account>, e.g. --as ana");
-    return client.account(flags.as, DEFAULT_PRIVATE_KEY);
+    return signerFor(client, env, flags.as);
   };
   const stewardOf = (name: string) => {
     const id = env.stewards[name];
@@ -186,19 +220,24 @@ async function main(): Promise<void> {
     }
     case "keeper": {
       // DEMO: the Keeper also plays the pool's rewards and the price oracle.
-      const keeper = client.account("keeper", DEFAULT_PRIVATE_KEY);
-      const relay = client.account(IDS.relay, DEFAULT_PRIVATE_KEY);
-      const council = client.account(IDS.council, DEFAULT_PRIVATE_KEY);
-      console.log("Keeper running. Pokes every Evergreen Name every 3s. DEMO: also drips pool rewards. Ctrl+C stops it.");
+      const keeper = signerFor(client, env, "keeper");
+      const relay = signerFor(client, env, IDS.relay);
+      const council = signerFor(client, env, IDS.council);
+      const renter = signerFor(client, env, "ben");
+      console.log("Keeper running. Checks every Evergreen Name every 3s and pokes when due. DEMO: also drips pool rewards. Ctrl+C stops it.");
       let ticks = 0;
       const gone: Record<string, number> = {};
       for (;;) {
         for (const [evergreen, stewardId] of Object.entries(loadEnv().stewards)) {
           try {
             const s = await client.getSteward(stewardId);
-            if (s.lease.secondsLeft <= Number(s.windowNs / 1_000_000_000n) && s.rewardsYocto < s.rentYocto && s.phase === "Idle") {
+            const inWindow = s.lease.secondsLeft <= Number(s.windowNs / 1_000_000_000n);
+            if (inWindow && s.rewardsYocto < s.rentYocto && s.phase === "Idle") {
               await call(relay, env.poolId, "drip_reward", { account_id: evergreen }, { deposit: (s.rentYocto * 12n) / 10n });
             }
+            // A poke is a transaction; only send one when the Steward has something to do.
+            const evacuated = typeof s.phase === "object" && "Evacuated" in s.phase;
+            if (evacuated || (s.phase === "Idle" && !inWindow)) continue;
             const result = await client.poke(keeper, stewardId);
             if (result !== "not_due") console.log(`${evergreen}: ${result} (${s.lease.secondsLeft}s left)`);
           } catch (error: any) {
@@ -207,23 +246,30 @@ async function main(): Promise<void> {
         }
         // DEMO loop: once a Name without a Steward has sat Reclaimable for 20s, reclaim it and
         // rent it again, so the page keeps showing a Name running out.
-        for (const lease of await client.listNames(env.namespace)) {
+        // A failed read (a public RPC hiccup) skips this round instead of stopping the keeper.
+        const leases = await client.listNames(env.namespace).catch((error) => {
+          console.log(`listing Names: ${error.message}`);
+          return [];
+        });
+        for (const lease of leases) {
           if (lease.status !== "reclaimable" || loadEnv().stewards[lease.name]) continue;
           const since = (gone[lease.name] ??= Date.now());
           if (Date.now() - since < 20_000) continue;
           delete gone[lease.name];
           try {
             await call(relay, env.registryId, "reclaim_finalize", { tla_id: lease.namespace, name: lease.label });
-            await client.rent(client.account("ben", DEFAULT_PRIVATE_KEY), lease.name);
-            console.log(`${lease.name}: reclaimed and rented again by ben (demo loop)`);
+            await client.rent(renter, lease.name);
+            console.log(`${lease.name}: reclaimed and rented again by ${renter.accountId} (demo loop)`);
           } catch (error: any) {
             console.log(`${lease.name}: ${error.message}`);
           }
         }
         // The NEAR/USD rate goes stale after 6h; refresh it now and then (cooldown is 5 min).
         if (++ticks % 120 === 0) {
-          const rate = await client.rpc.callFunction({ contractId: env.registryId, method: "get_near_usd_rate", args: {} });
-          await call(council, env.registryId, "set_near_usd_rate", { rate }, { deposit: ONE_YOCTO }).catch(() => {});
+          await client.rpc
+            .callFunction({ contractId: env.registryId, method: "get_near_usd_rate", args: {} })
+            .then((rate) => call(council, env.registryId, "set_near_usd_rate", { rate }, { deposit: ONE_YOCTO }))
+            .catch(() => {});
         }
         await new Promise((r) => setTimeout(r, 3000));
       }
