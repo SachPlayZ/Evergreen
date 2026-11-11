@@ -191,6 +191,7 @@ async function main(): Promise<void> {
       const council = client.account(IDS.council, DEFAULT_PRIVATE_KEY);
       console.log("Keeper running. Pokes every Evergreen Name every 3s. DEMO: also drips pool rewards. Ctrl+C stops it.");
       let ticks = 0;
+      const gone: Record<string, number> = {};
       for (;;) {
         for (const [evergreen, stewardId] of Object.entries(loadEnv().stewards)) {
           try {
@@ -202,6 +203,21 @@ async function main(): Promise<void> {
             if (result !== "not_due") console.log(`${evergreen}: ${result} (${s.lease.secondsLeft}s left)`);
           } catch (error: any) {
             console.log(`${evergreen}: ${error.message}`);
+          }
+        }
+        // DEMO loop: once a Name without a Steward has sat Reclaimable for 20s, reclaim it and
+        // rent it again, so the page keeps showing a Name running out.
+        for (const lease of await client.listNames(env.namespace)) {
+          if (lease.status !== "reclaimable" || loadEnv().stewards[lease.name]) continue;
+          const since = (gone[lease.name] ??= Date.now());
+          if (Date.now() - since < 20_000) continue;
+          delete gone[lease.name];
+          try {
+            await call(relay, env.registryId, "reclaim_finalize", { tla_id: lease.namespace, name: lease.label });
+            await client.rent(client.account("ben", DEFAULT_PRIVATE_KEY), lease.name);
+            console.log(`${lease.name}: reclaimed and rented again by ben (demo loop)`);
+          } catch (error: any) {
+            console.log(`${lease.name}: ${error.message}`);
           }
         }
         // The NEAR/USD rate goes stale after 6h; refresh it now and then (cooldown is 5 min).

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CountUp, Reveal, Tilt } from "./Motion";
 import { Strand, Willow, type WillowState } from "./Willow";
 
 interface LeaseJson {
@@ -72,17 +73,30 @@ function NameCard({ item, termSecs }: { item: NameJson; termSecs: number }) {
   const { lease, steward, warnings } = item;
   const health = lease.secondsLeft / termSecs;
   const toRent = steward ? Math.min(1, Number(BigInt(steward.rewardsYocto) * 1000n / (BigInt(steward.rentYocto) || 1n)) / 1000) : 0;
+  const renewals = steward?.renewals.length ?? 0;
+  const seen = useRef(renewals);
+  const [burst, setBurst] = useState(0);
+  useEffect(() => {
+    if (renewals > seen.current) setBurst((b) => b + 1);
+    seen.current = renewals;
+  }, [renewals]);
+  const urgent = lease.status === "active" && lease.secondsLeft <= termSecs / 4;
   return (
-    <article className={`card card-${lease.status} ${steward ? "card-evergreen" : "card-plain"}`}>
+    <Tilt className={`card card-${lease.status} ${steward ? "card-evergreen" : "card-plain"} ${urgent ? "card-urgent" : ""}`}>
+      {burst > 0 && <span key={burst} className="burst" aria-hidden="true" />}
       <header className="card-head">
         <h3 className="card-name">{lease.name}</h3>
         <span className="chip">{steward ? "Evergreen" : "No Steward"}</span>
       </header>
       <div className="card-body">
-        <Willow health={health} state={lease.status} />
+        <div className="card-art">
+          <Willow health={health} state={lease.status} />
+        </div>
         <div className="card-facts">
           <p className="card-status">{STATUS[lease.status]}</p>
-          <p className="card-time">{lease.status === "active" ? timeLeft(lease.secondsLeft) : lease.status === "grace" ? "expired" : "gone"}</p>
+          <p className="card-time" key={lease.status === "active" ? "t" : lease.status}>
+            {lease.status === "active" ? timeLeft(lease.secondsLeft) : lease.status === "grace" ? "expired" : "gone"}
+          </p>
           <p className="card-sub">
             {lease.status === "active"
               ? "left on this Lease"
@@ -136,14 +150,15 @@ function NameCard({ item, termSecs }: { item: NameJson; termSecs: number }) {
       </div>
       {steward && steward.renewals.length > 0 && (
         <footer className="timeline">
-          {steward.renewals.map((r, i) => (
-            <span key={i} className="tick">
-              renewal {i + 1}: paid {near(r.rentYocto)} NEAR from rewards
+          {steward.renewals.length > 3 && <span className="tick tick-more">{steward.renewals.length - 3} earlier</span>}
+          {steward.renewals.slice(-3).map((r, i) => (
+            <span key={r.atNs} className="tick">
+              renewal {Math.max(0, steward.renewals.length - 3) + i + 1}: paid {near(r.rentYocto)} NEAR from rewards
             </span>
           ))}
         </footer>
       )}
-    </article>
+    </Tilt>
   );
 }
 
@@ -186,8 +201,10 @@ export function LiveDemo() {
         and the demo pool pays rewards on demand (real pools: about 5% a year).
       </p>
       <div className="cards">
-        {[...evergreen, ...plain].map((item) => (
-          <NameCard key={item.lease.name} item={item} termSecs={demo.termSecs ?? 60} />
+        {[...evergreen, ...plain].map((item, i) => (
+          <Reveal key={item.lease.name} delay={i * 0.12}>
+            <NameCard item={item} termSecs={demo.termSecs ?? 60} />
+          </Reveal>
         ))}
       </div>
       <section className="icu" id="icu">
@@ -228,25 +245,33 @@ export function MainnetForest() {
   const date = (ms: number) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   return (
     <>
-      <div className="stats">
+      <Reveal className="stats">
         <div>
-          <b>{data.nameCount}</b>
+          <b>
+            <CountUp value={data.nameCount} />
+          </b>
           <span>Names rented on mainnet</span>
         </div>
         <div>
-          <b>{data.namespaces.toLocaleString("en-US")}</b>
+          <b>
+            <CountUp value={data.namespaces} />
+          </b>
           <span>Namespaces</span>
         </div>
         <div>
           <b>{first ? date(first.expiresAtMs) : "n/a"}</b>
           <span>first Lease runs out</span>
         </div>
-      </div>
+      </Reveal>
+      <Reveal className="forest-wrap" delay={0.1}>
       <div className="forest" aria-label="Every Name on mainnet, by time left">
-        {data.names.map((n) => (
-          <Strand key={n.name} share={n.secondsLeft / year} title={`${n.name}: ${timeLeft(n.secondsLeft)} left`} />
+        {data.names.map((n, i) => (
+          <span key={n.name} className="strand-wrap" style={{ animationDelay: `${i * 18}ms` }}>
+            <Strand share={n.secondsLeft / year} title={`${n.name}: ${timeLeft(n.secondsLeft)} left`} />
+          </span>
         ))}
       </div>
+      </Reveal>
       <p className="fine">
         One strand per real Name, read live from <code>{data.registryId}</code>. Length is the share of its year left.
       </p>

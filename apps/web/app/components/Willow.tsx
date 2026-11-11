@@ -48,15 +48,21 @@ export function Willow({ health, state, size = 280 }: { health: number; state: W
       {trunk.map((d, i) => (
         <circle key={`t${i}`} className="willow-trunk" cx={d.cx} cy={d.cy} r={3.4} />
       ))}
-      {dots.map((d, i) => (
-        <circle
-          key={i}
-          className={d.lit ? `willow-leaf willow-leaf-${(d.row + d.col) % 3}` : "willow-bare"}
-          cx={d.cx}
-          cy={d.cy}
-          r={d.lit ? 3.6 : 1.1}
-          style={{ transitionDelay: `${(d.row * 14 + (d.col % 5) * 9) % 320}ms` }}
-        />
+      {Array.from({ length: COLS }, (_, col) => (
+        <g key={col} className="sway" style={{ animationDelay: `${-(jitter(col + 7) * 5).toFixed(2)}s` }}>
+          {dots
+            .filter((d) => d.col === col)
+            .map((d) => (
+              <circle
+                key={d.row}
+                className={d.lit ? `willow-leaf willow-leaf-${(d.row + d.col) % 3}` : "willow-bare"}
+                cx={d.cx}
+                cy={d.cy}
+                r={d.lit ? 3.6 : 1.1}
+                style={{ transitionDelay: `${(d.row * 14 + (d.col % 5) * 9) % 320}ms` }}
+              />
+            ))}
+        </g>
       ))}
       {Array.from({ length: COLS }, (_, col) => (
         <circle key={`g${col}`} className="willow-ground" cx={col * GAP + 6} cy={(ROWS + 4) * GAP + 6} r={1.6} />
