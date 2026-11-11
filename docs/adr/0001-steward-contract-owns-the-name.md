@@ -12,3 +12,5 @@ At `d85860a` an Agent Budget cannot call the registry, and only the Owner can ma
 - The Name must be transferred to the Steward while it holds no allow-listed tokens, because transfer is blocked otherwise.
 - Overpaid rent lands in `pending_refunds` and the Steward must claim it.
 - The NEAR/USD rate must be fresh (under 6 h) at renewal.
+- The Steward must be a registered extension of the Name's wallet, not just its Owner.
+- Reclaim sweeps only the Name account's own balance, not pool stake, so the Steward must never let a staked Name pass Grace.

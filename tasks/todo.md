@@ -5,7 +5,7 @@ Deadline: submit by **14 Nov 12:00 UTC** (hard close 23:59 UTC). Terms: `GLOSSAR
 ## Decisions (grilling Q1–Q44 + NFT-only pivot)
 
 - **Pitch:** "NEAR names now expire; this one keeps itself alive." No SDK mention in README headline or video. Track: `nfts` only in effort; `open` ticked on form, nothing built for it. Solo. Proof agent dropped.
-- **Mechanism:** Steward contract owns Name (ADR 0001). `poke()` open to all, acts within N days of expiry, no bounty. Two-phase: unstake next Rent + 10% buffer from rewards → withdraw → `renew_sub_account` → claim `pending_refunds`. Patron can `exit()` (unstake all, clear assets, transfer Name back).
+- **Mechanism:** Steward contract owns Name and is a registered wallet extension (ADR 0001). Invariant: staked Name never passes Grace (stake-leak risk). `poke()` open to all, acts within N days of expiry, no bounty. Two-phase: unstake next Rent + 10% buffer from rewards → withdraw → `renew_sub_account` → claim `pending_refunds`. Patron can `exit()` (unstake all, clear assets, transfer Name back).
 - **Lifelines:** Tips add to Stake; anyone can pay Rent directly; public ICU page lists at-risk Names.
 - **Demo env:** `near-workspaces` sandbox primary (`pnpm demo`); testnet copy backs hosted page. Demo pool = forked stub pool with admin reward drip, labelled. Keeper refreshes NEAR/USD rate in sandbox (6h staleness). 60s lease/grace, labelled.
 - **Demo Namespace:** Open, Standard (×1.5) → `alice.demo` = $30/yr.
@@ -30,11 +30,14 @@ Deadline: submit by **14 Nov 12:00 UTC** (hard close 23:59 UTC). Terms: `GLOSSAR
 - [ ] Sandbox deploys fleet with 60s lease/grace, Open Standard `demo` Namespace, rate set
 - [ ] Demo pool (stub fork + reward drip)
 - [ ] Steward spike: adopt Name, stake, drip, `poke()` renews from rewards, principal unchanged
+  - [ ] Steward is registered wallet extension after transfer; can drive Name (1 yocto)
+  - [ ] Payment path: (a) Name calls registry via `w_execute_extension`, else (b) Name → Steward → registry
+  - [ ] Lapse a staked Name: where does stake end up? (stake-leak check)
 - [ ] **Go/no-go**: fail → fallback pay-safely page
 - [ ] Search mainnet registry address (explorers, NEAR Accounts, release tags)
 
 ## 12 Nov
-- [ ] Steward robust: two-phase unstake, refund claim, tips, `exit()`, edge cases (poke outside window, stale rate, past grace), tests
+- [ ] Steward robust: view-driven idempotent poke, two-phase unstake, refund claim, tips, `exit()`, lapse guard (unstake all before Grace ends), renewal window 30d/30s, edge cases (poke outside window, stale rate), tests
 - [ ] Client core + tests vs sandbox
 - [ ] CLI + `evergreen demo` end-to-end
 - [ ] Prebuilt wasm + checksums; GH Actions green
