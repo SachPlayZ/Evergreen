@@ -28,13 +28,31 @@ Deadline: submit by **14 Nov 12:00 UTC** (hard close 23:59 UTC). Terms: `GLOSSAR
 ## 11 Nov — gate
 - [x] Monorepo skeleton; submodule pinned; move `web-levkit` → `apps/web`
 - [ ] Sandbox deploys fleet with 60s lease/grace, Open Standard `demo` Namespace, rate set
-- [ ] Demo pool (stub fork + reward drip)
-- [ ] Steward spike: adopt Name, stake, drip, `poke()` renews from rewards, principal unchanged
-  - [ ] Steward is registered wallet extension after transfer; can drive Name (1 yocto)
-  - [ ] Payment path: (a) Name calls registry via `w_execute_extension`, else (b) Name → Steward → registry
-  - [ ] Lapse a staked Name: where does stake end up? (stake-leak check)
-- [ ] **Go/no-go**: fail → fallback pay-safely page
+- [x] Demo pool (stub fork + reward drip)
+- [x] Steward spike: adopt Name, stake, drip, `poke()` renews from rewards, principal unchanged
+  - [x] Steward is registered wallet extension after transfer; can drive Name (1 yocto)
+  - [x] Payment path: (a) Name calls registry via `w_execute_extension`, else (b) Name → Steward → registry
+  - [x] Lapse a staked Name: where does stake end up? (stake-leak check)
+- [x] **Go/no-go**: GO
 - [ ] Search mainnet registry address (explorers, NEAR Accounts, release tags)
+
+### Spike RESULT (run 11 Nov, sandbox, `cd contracts/spike && cargo test --test spike -- --nocapture`) — GO
+- P1 PASS: after `transfer_sub_account`, Steward is registry owner AND wallet extension; it drives the Name (staked 30 NEAR).
+- P2 PASS (path a): pokes ran unstaking → withdrawing → renewing; Name paid its own renewal; expiry +1 term; staked 33.526 ≥ principal 32; 0.474 NEAR overpay sits in pending_refunds.
+- Tip PASS (+2 NEAR to principal); exit PASS (Name back to Patron).
+- P3 CONFIRMED LEAK: after lapse + reclaim + re-rent, the NEW renter unstaked and withdrew the old renter's 5 NEAR stake. Old renter only got the liquid sweep. So the lapse guard is mandatory, and this goes in the upstream issue.
+- NEW: `transfer_sub_account` sweeps the Name's NEAR (40.2 → 0.008), so the adopt flow is transfer first, then fund and stake.
+- NEW: a Name with ~0 balance can't act (balance reserve), so keep a small liquid buffer on the Name.
+- Not yet tested: real pool unstake delay, stale rate, lapse guard, refund claim + restake.
+
+### Spike notes (code read, before run)
+- Toolchain: rust 1.97.1 + wasm32 ok; `cargo install --locked cargo-near` started; near-workspaces fetches sandbox itself.
+- Harness: reuse upstream `integration/tests/common` (deploy_fleet, deploy_registry_with_terms(60s,60s), rent, fast_forward 4000 blocks). Wasm read from `upstream/target/near/<name>/`.
+- Payment path (a) likely OK: wallet `execute_request` blocks only self-calls; owner calls are unmetered (`hos-wallet/src/lib.rs:950`, `:1124`). Verify by run.
+- Stake leak: upstream test `an_unlisted_token_rides_the_name_to_its_next_renter` (`integration/tests/reclaim.rs:584`) shows unswept assets go to the next renter, who gets the wallet. Pool stake almost certainly the same, so the lapse guard is required.
+- Transfer: needs predecessor == Owner + 1 yocto (`marketplace.rs:265`), which a Steward contract can do.
+- Stub pool has no rewards, so the demo pool must add a reward drip.
+- Next: build wasm (cargo near), new crate `contracts/spike` with probes P1 extension after transfer, P2 path (a), P3 lapse a staked Name, then re-rent and withdraw.
 
 ## 12 Nov
 - [ ] Steward robust: view-driven idempotent poke, two-phase unstake, refund claim, tips, `exit()`, lapse guard (unstake all before Grace ends), renewal window 30d/30s, edge cases (poke outside window, stale rate), tests

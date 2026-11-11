@@ -1,0 +1,12 @@
+[package]
+name = "demo-pool"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "DEMO ONLY staking pool: stub pool plus an on-demand reward drip"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = { workspace = true }
