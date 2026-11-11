@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     agentFeedback: true,
   },
   cacheComponents: true,
+  transpilePackages: ["@evergreen-names/client"],
   partialPrefetching: true,
   turbopack: {
     rules: {

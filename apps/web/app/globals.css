@@ -1,26 +1,502 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #060905;
+  --panel: #0c120a;
+  --lime: #c9f73a;
+  --leaf: #6fce3c;
+  --moss: #2f8f3a;
+  --deep: #123d1f;
+  --cream: #f1e9c9;
+  --amber: #f0b33a;
+  --ash: #5d5a4c;
+  --line: rgba(201, 247, 58, 0.22);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background-color: var(--ink);
+  /* halftone field */
+  background-image: radial-gradient(rgba(111, 206, 60, 0.13) 1.1px, transparent 1.3px);
+  background-size: 14px 14px;
+  color: var(--cream);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 20px 96px;
+}
+
+code,
+pre {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.92em;
+}
+code {
+  color: var(--lime);
+}
+
+/* ---- hero ---- */
+.hero {
+  padding: 72px 0 48px;
+}
+.kicker {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--leaf);
+  margin: 0 0 20px;
+}
+h1 {
+  font-family: var(--font-display), Impact, sans-serif;
+  font-weight: 400;
+  font-size: clamp(44px, 9vw, 116px);
+  line-height: 0.95;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--cream);
+}
+h1 em {
+  display: block;
+  font-style: normal;
+  color: var(--ink);
+  /* raw brush stroke */
+  background: linear-gradient(100deg, transparent 0.6%, var(--lime) 1.4%, var(--lime) 97.6%, transparent 99%);
+  padding: 0.06em 0.16em 0.02em;
+  margin: 0.12em 0 0 -0.16em;
+  width: fit-content;
+  transform: rotate(-1.2deg);
+  box-shadow: 6px 6px 0 var(--moss);
+}
+.lede {
+  max-width: 660px;
+  font-size: 18px;
+  margin: 40px 0 24px;
+  color: #d9d2b4;
+}
+.tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+}
+.tags li {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  color: var(--lime);
+  background: rgba(18, 61, 31, 0.45);
+}
+
+/* ---- sections ---- */
+section {
+  margin-top: 72px;
+}
+h2 {
+  font-family: var(--font-display), Impact, sans-serif;
+  font-weight: 400;
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin: 0 0 20px;
+  padding-top: 18px;
+  /* woodcut hatch rule */
+  background: repeating-linear-gradient(115deg, var(--leaf) 0 2px, transparent 2px 7px) top / 100% 8px no-repeat;
+}
+h2 span {
+  display: block;
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 17px;
+  text-transform: none;
+  color: var(--cream);
+  margin-top: 8px;
+  letter-spacing: 0;
+}
+.label-strip {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--cream);
+  padding: 8px 12px;
+  margin: 0 0 20px;
+}
+.note {
+  border: 1px dashed var(--line);
+  padding: 16px;
+  color: #cfc8a8;
+}
+.note pre {
+  margin: 10px 0 0;
+  color: var(--lime);
+  white-space: pre-wrap;
+}
+.fine {
+  font-size: 13.5px;
+  color: #a8a286;
+  max-width: 760px;
+}
+
+/* ---- living cards ---- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+  gap: 20px;
+}
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  position: relative;
+  padding: 18px 18px 14px;
+  min-width: 0;
+}
+.card::before {
+  /* hatch edge */
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 8px;
+  background: repeating-linear-gradient(135deg, var(--leaf) 0 2px, transparent 2px 6px);
+}
+.card-grace::before {
+  background: repeating-linear-gradient(135deg, var(--amber) 0 2px, transparent 2px 6px);
+}
+.card-reclaimable {
+  border-color: rgba(93, 90, 76, 0.6);
+}
+.card-reclaimable::before {
+  background: repeating-linear-gradient(135deg, var(--ash) 0 2px, transparent 2px 6px);
+}
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-left: 10px;
+}
+.card-name {
+  font-family: var(--font-display), Impact, sans-serif;
+  font-weight: 400;
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 1;
+  margin: 0;
+  color: var(--cream);
+  overflow-wrap: anywhere;
+}
+.chip {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  white-space: nowrap;
+  color: var(--ash);
+  border: 1px solid var(--ash);
+}
+.card-evergreen .chip {
+  color: var(--ink);
+  background: var(--lime);
+  border-color: var(--lime);
+}
+.card-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 14px 0 6px 10px;
+}
+.card-facts {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.card-status {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--leaf);
+}
+.card-grace .card-status,
+.card-grace .card-time {
+  color: var(--amber);
+}
+.card-reclaimable .card-status,
+.card-reclaimable .card-time,
+.card-reclaimable .card-name {
+  color: var(--ash);
+}
+.card-time {
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: 64px;
+  line-height: 1;
+  margin: 4px 0 0;
+  color: var(--lime);
+  font-variant-numeric: tabular-nums;
+}
+.card-sub {
+  margin: 2px 0 14px;
+  font-size: 14px;
+  color: #b9b294;
+}
+.facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+  margin: 0 0 12px;
+}
+.facts dt {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8f8a70;
+}
+.facts dd {
+  margin: 0;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 15px;
+  color: var(--cream);
+  font-variant-numeric: tabular-nums;
+}
+.meter {
+  height: 10px;
+  border: 1px solid var(--line);
+  background: repeating-linear-gradient(90deg, rgba(201, 247, 58, 0.08) 0 2px, transparent 2px 6px);
+}
+.meter-fill {
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--lime) 0 4px, var(--leaf) 4px 6px);
+  transition: width 0.6s ease;
+}
+.meter-label {
+  font-size: 12.5px;
+  color: #a8a286;
+  margin: 6px 0 10px;
+}
+.phase {
+  font-size: 14.5px;
+  margin: 0;
+  color: var(--cream);
+}
+.warnings {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  color: #d9d2b4;
+}
+.warnings li {
+  border-left: 3px solid var(--amber);
+  padding-left: 8px;
+  margin-top: 6px;
+}
+.warnings code {
+  color: var(--amber);
+}
+.timeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 0 0 10px;
+  border-top: 1px dashed var(--line);
+  margin-top: 10px;
+}
+.tick {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11.5px;
+  color: var(--ink);
+  background: var(--leaf);
+  padding: 3px 7px;
+}
+
+/* ---- willow ---- */
+.willow {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+.willow circle {
+  transition: r 0.5s ease, fill 0.5s ease, opacity 0.5s ease;
+}
+.willow-leaf-0 {
+  fill: var(--lime);
+}
+.willow-leaf-1 {
+  fill: var(--leaf);
+}
+.willow-leaf-2 {
+  fill: var(--moss);
+}
+.willow-bare {
+  fill: rgba(201, 247, 58, 0.16);
+}
+.willow-trunk {
+  fill: #1b2413;
+}
+.willow-ground {
+  fill: var(--moss);
+}
+.willow-grace .willow-leaf-0,
+.willow-grace .willow-leaf-1,
+.willow-grace .willow-leaf-2 {
+  fill: var(--amber);
+}
+.willow-reclaimable .willow-bare {
+  fill: rgba(93, 90, 76, 0.35);
+}
+.willow-reclaimable .willow-trunk {
+  fill: #23211b;
+}
+.willow-reclaimable .willow-ground {
+  fill: var(--ash);
+}
+
+/* ---- ICU ---- */
+.icu {
+  margin-top: 56px;
+}
+.icu-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  border-top: 1px solid var(--line);
+}
+.icu-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  align-items: baseline;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14.5px;
+}
+.icu-list strong {
+  font-family: var(--font-display), Impact, sans-serif;
+  font-weight: 400;
+  font-size: 24px;
+  color: var(--amber);
+}
+.icu-list code {
+  margin-left: auto;
+  background: rgba(18, 61, 31, 0.5);
+  padding: 3px 8px;
+}
+
+/* ---- mainnet ---- */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 48px;
+  margin-bottom: 22px;
+}
+.stats b {
+  display: block;
+  font-family: var(--font-display), Impact, sans-serif;
+  font-weight: 400;
+  font-size: clamp(36px, 6vw, 60px);
+  line-height: 1;
+  color: var(--cream);
+}
+.stats span {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--leaf);
+}
+.forest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.strand-lit {
+  fill: var(--leaf);
+}
+.strand:nth-child(3n) .strand-lit {
+  fill: var(--lime);
+}
+.strand:nth-child(5n) .strand-lit {
+  fill: var(--moss);
+}
+.strand-bare {
+  fill: rgba(201, 247, 58, 0.18);
+}
+.soon {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 18px;
+  font-size: 14.5px;
+}
+.soon th {
+  text-align: left;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--leaf);
+  font-weight: 400;
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.soon td {
+  padding: 9px 12px 9px 0;
+  border-bottom: 1px solid rgba(201, 247, 58, 0.1);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.soon td:first-child {
+  color: var(--cream);
+  font-weight: 600;
+}
+
+/* ---- how ---- */
+.steps {
+  padding-left: 22px;
+  max-width: 760px;
+  margin: 0 0 18px;
+}
+.steps li {
+  margin-bottom: 10px;
+  color: #d9d2b4;
+}
+.steps b {
+  color: var(--lime);
+}
+
+@media (max-width: 560px) {
+  .hero {
+    padding-top: 44px;
+  }
+  .card-time {
+    font-size: 52px;
+  }
+  .icu-list code {
+    margin-left: 0;
+  }
+  .soon th:nth-child(2),
+  .soon td:nth-child(2) {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .willow circle,
+  .meter-fill {
+    transition: none;
+  }
 }

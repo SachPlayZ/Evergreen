@@ -59,13 +59,14 @@ Deadline: submit by **14 Nov 12:00 UTC** (hard close 23:59 UTC). Terms: `GLOSSAR
 - [x] Steward robust: view-driven idempotent poke, two-phase unstake, refund claim, tips, `exit()`, lapse guard (unstake all before Grace ends), renewal window 30d/30s, edge cases (poke outside window, stale rate), tests
 - [x] Client core + tests vs sandbox (6 scenarios, `pnpm test`)
 - [x] CLI + `evergreen demo` end-to-end (`pnpm demo`, ~2m20s)
-- [ ] Prebuilt wasm + checksums (done); GH Actions green (first run in progress)
+- [x] Prebuilt wasm + checksums; GH Actions green (typecheck, tests, demo, web build)
 - [ ] Mainnet decision (address found, so technically GO; needs user: real NEAR, a real Name, a real pool choice)
 - NEW finding: the wallet refuses its Owner once expiry passes, so the Steward must finish (or evacuate) BEFORE expiry, not before Grace ends. Built in and tested.
 - Idea for web: mainnet is readable now, so the page can list all 79 real Names with their expiry dates.
 
 ## 13 Nov
-- [ ] Living card + ICU page; hosted on testnet copy
+- [x] Living card + ICU + mainnet census page (`pnpm evergreen sandbox --story`, `pnpm evergreen keeper run`, `pnpm dev:web`)
+- [ ] Host the page (needs a testnet copy of the contracts, or mainnet section only)
 - [ ] Mainnet Evergreen Name (if go)
 - [ ] User: X launch of mainnet Evergreen Name + ICU (if mainnet go)
 - [ ] Adopt flow button

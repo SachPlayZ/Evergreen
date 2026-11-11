@@ -1,69 +1,93 @@
-import Image from "next/image";
+import { LiveDemo, MainnetForest } from "./components/Live";
+
+const STAKE_ROWS = [
+  { name: "12+ characters", rent: 7.5 },
+  { name: "9 to 10 characters", rent: 15 },
+  { name: "6 to 8 characters", rent: 30 },
+  { name: "5 or fewer", rent: 75 },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main>
+      <section className="hero">
+        <p className="kicker">Evergreen · NEAR Top Level Accounts</p>
+        <h1>
+          NEAR names now expire.
+          <em>This one keeps itself alive.</em>
+        </h1>
+        <p className="lede">
+          A name like <code>alice.bot</code> is an NFT and a real account, leased for a year. Miss the renewal and anyone
+          can take it. An Evergreen Name is owned by a small Steward contract: it stakes the Name&apos;s own NEAR and pays
+          each year&apos;s Rent from the rewards. The principal is never spent.
+        </p>
+        <ul className="tags">
+          <li>An NFT that is an account</li>
+          <li>Owns its own stake</li>
+          <li>Pays its own Rent</li>
+          <li>Anyone can throw it a Lifeline</li>
+        </ul>
+      </section>
+
+      <section className="live" id="live">
+        <h2>
+          Watch <span>one Name renew itself, one run out</span>
+        </h2>
+        <LiveDemo />
+      </section>
+
+      <section className="mainnet" id="mainnet">
+        <h2>
+          Mainnet <span>every real Name is on a clock</span>
+        </h2>
+        <MainnetForest />
+      </section>
+
+      <section className="how" id="how">
+        <h2>
+          How <span>it works, and what it costs</span>
+        </h2>
+        <ol className="steps">
+          <li>
+            <b>Hand over.</b> You transfer your Name to a Steward contract made for it. You stay its Patron and can take
+            the Name back at any time.
+          </li>
+          <li>
+            <b>Stake once.</b> The Name stakes its own NEAR in a staking pool. Tips from anyone are added to the Stake.
+          </li>
+          <li>
+            <b>Anyone pokes.</b> Near expiry, anyone can poke the Steward. It takes exactly the next Rent out of the
+            rewards and pays the registry&apos;s open renewal.
+          </li>
+          <li>
+            <b>If rewards fall short,</b> it pulls the whole Stake back onto the Name before expiry, because stake left
+            in a pool passes to whoever rents the Name next.
+          </li>
+        </ol>
+        <table className="soon">
+          <thead>
+            <tr>
+              <th>Name length</th>
+              <th>Rent per year</th>
+              <th>Stake that pays it at 5% yield</th>
+            </tr>
+          </thead>
+          <tbody>
+            {STAKE_ROWS.map((row) => (
+              <tr key={row.name}>
+                <td>{row.name}</td>
+                <td>${row.rent.toFixed(2)}</td>
+                <td>${(row.rent / 0.05).toFixed(0)}, kept by you</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="fine">
+          Rent shown for an Open Standard Namespace at the registry&apos;s default prices. The Top Level Accounts registry
+          and wallet are third-party, audited and unmodified (houseofstake/tla-contracts at d85860a). The Steward is new
+          and unaudited.
+        </p>
+      </section>
+    </main>
   );
 }

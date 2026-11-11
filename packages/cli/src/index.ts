@@ -3,7 +3,7 @@
  * evergreen: one command per step of the Evergreen story.
  *
  *   evergreen demo                      run the whole story in a fresh sandbox
- *   evergreen sandbox                   start a sandbox and keep it running
+ *   evergreen sandbox [--story]         start a sandbox and keep it running (--story sets up alice.demo and bob.demo)
  *   evergreen price <name>
  *   evergreen rent <name> --as <account>
  *   evergreen status <name>
@@ -23,7 +23,7 @@ import { fileURLToPath } from "node:url";
 import { Evergreen, ONE_YOCTO, call, nearToYocto, stakeNeededYocto, yoctoToNear } from "@evergreen-names/client";
 import { IDS, startSandbox, wasm } from "@evergreen-names/sandbox";
 import { DEFAULT_PRIVATE_KEY } from "near-sandbox";
-import { runDemo } from "./demo.js";
+import { runDemo } from "./demo";
 
 const ENV_FILE = join(dirname(fileURLToPath(import.meta.url)), "../../../.evergreen/sandbox.json");
 const PEOPLE = ["ana", "ben", "fan", "keeper"];
@@ -54,7 +54,7 @@ function parse(argv: string[]) {
   const flags: Record<string, string> = {};
   const words: string[] = [];
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i].startsWith("--")) flags[argv[i].slice(2)] = argv[++i] ?? "";
+    if (argv[i].startsWith("--")) flags[argv[i].slice(2)] = argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[++i] : "";
     else words.push(argv[i]);
   }
   return { words, flags };
@@ -71,6 +71,24 @@ async function main(): Promise<void> {
     const sb = await startSandbox({ people: PEOPLE });
     saveEnv({ rpcUrl: sb.rpcUrl, registryId: sb.registryId, namespace: sb.namespace, poolId: sb.poolId, stewards: {} });
     console.log(`Sandbox ready at ${sb.rpcUrl}. Namespace: ${sb.namespace}. People: ${PEOPLE.join(", ")}.`);
+    if (flags.story !== undefined) {
+      // A live scene for the web page: alice.demo is Evergreen, bob.demo is left alone.
+      const { client } = sb;
+      const [ana, ben, fan] = ["ana", "ben", "fan"].map(sb.account);
+      await client.rent(ana, "alice.demo");
+      await client.rent(ben, "bob.demo");
+      const stewardId = await client.adopt(ana, "alice.demo", {
+        pool: sb.poolId,
+        stakeYocto: nearToYocto(30),
+        stewardWasm: sb.stewardWasm,
+        windowSecs: 35,
+        lapseGuardSecs: 12,
+      });
+      await client.tip(fan, stewardId, nearToYocto(2));
+      saveEnv({ rpcUrl: sb.rpcUrl, registryId: sb.registryId, namespace: sb.namespace, poolId: sb.poolId, stewards: { "alice.demo": stewardId } });
+      console.log("Story started: alice.demo is Evergreen (30 NEAR staked, 1 Tip); bob.demo has no Steward.");
+      console.log("Now run `pnpm evergreen keeper run` in another terminal, and `pnpm dev:web` to watch.");
+    }
     console.log("Leave this running. Ctrl+C stops it.");
     process.on("SIGINT", async () => {
       await sb.stop();

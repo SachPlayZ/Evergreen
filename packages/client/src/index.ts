@@ -4,9 +4,9 @@
  * @ d85860a), a staking pool and Steward contracts.
  */
 import { Account, JsonRpcProvider, actions } from "near-api-js";
-import { ONE_YOCTO, TGAS, call, nearToYocto, provider, view } from "./near.js";
+import { ONE_YOCTO, TGAS, call, nearToYocto, provider, view } from "./near";
 
-export * from "./near.js";
+export * from "./near";
 
 export interface EvergreenConfig {
   rpcUrl: string;
@@ -208,6 +208,34 @@ export class Evergreen {
     return (await this.listNames(namespace))
       .filter((l) => l.status === "grace" || (l.status === "active" && l.secondsLeft <= soonSecs))
       .sort((a, b) => a.secondsLeft - b.secondsLeft);
+  }
+
+  /** Every Lease in the registry, across all Namespaces. */
+  async listAllNames(max = 500): Promise<Lease[]> {
+    const [grace, now] = await Promise.all([
+      view<string>(this.rpc, this.registryId, "get_grace_period_ns"),
+      this.chainTimeNs(),
+    ]);
+    const out: Lease[] = [];
+    for (let from = 0; from < max; from += 50) {
+      const rows = await view<{ sub_account: RawSub }[]>(this.rpc, this.registryId, "list_sub_accounts", {
+        from_index: from,
+        limit: 50,
+      });
+      out.push(...rows.map((r) => toLease(r.sub_account, BigInt(grace), now)));
+      if (rows.length < 50) break;
+    }
+    return out;
+  }
+
+  /** The Steward status if this Lease's Owner is a Steward for it, else undefined. */
+  async stewardOf(lease: Lease): Promise<StewardStatus | undefined> {
+    try {
+      const status = await this.getSteward(lease.owner);
+      return status.name === lease.name ? status : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   async rent(signer: Account, name: string): Promise<Lease> {
@@ -439,4 +467,9 @@ function toLease(sub: RawSub, graceNs: bigint, nowNs: bigint): Lease {
 
 function warn(code: WarningCode, message: string): Warning {
   return { code, message };
+}
+
+/** JSON-safe copy of any client result: bigints become strings. */
+export function toJson<T>(value: T): unknown {
+  return JSON.parse(JSON.stringify(value, (_k, v) => (typeof v === "bigint" ? v.toString() : v)));
 }

@@ -1,7 +1,7 @@
 /** Names and Leases, through the client, against the real registry in a sandbox. */
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { startSandbox, type EvergreenSandbox } from "@evergreen-names/sandbox";
-import { nearToYocto } from "../src/index.js";
+import { nearToYocto } from "../src/index";
 
 let sb: EvergreenSandbox;
 const codes = async (name: string, options = {}) =>

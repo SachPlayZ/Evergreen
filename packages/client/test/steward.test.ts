@@ -1,7 +1,7 @@
 /** Evergreen Names: a Steward owns the Name and keeps it alive. Sandbox, 60-second Leases, DEMO pool. */
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { startSandbox, type EvergreenSandbox } from "@evergreen-names/sandbox";
-import { nearToYocto } from "../src/index.js";
+import { nearToYocto } from "../src/index";
 
 let sb: EvergreenSandbox;
 const NS = 1_000_000_000n;
