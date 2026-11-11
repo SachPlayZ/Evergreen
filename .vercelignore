@@ -1,0 +1,7 @@
+contracts
+tasks
+docs
+.evergreen
+.github
+*.md
+!apps/web/AGENTS.md
