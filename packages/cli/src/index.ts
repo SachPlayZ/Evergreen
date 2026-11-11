@@ -79,6 +79,11 @@ async function main(): Promise<void> {
     return new Promise(() => {});
   }
 
+  if (!command || command === "help") {
+    const source = readFileSync(fileURLToPath(import.meta.url), "utf8");
+    console.log(source.slice(source.indexOf("/**") + 4, source.indexOf("*/")).replace(/^ \* ?/gm, ""));
+    return;
+  }
   const env = loadEnv();
   const client = new Evergreen(env);
   const signer = () => {
@@ -190,7 +195,7 @@ async function main(): Promise<void> {
       }
     }
     default:
-      console.log(readFileSync(fileURLToPath(import.meta.url), "utf8").split("*/")[0].replace(/^#!.*\n\/\*\*\n?/, "").replace(/^ \* ?/gm, ""));
+      throw new Error(`Unknown command "${command}". Run "evergreen help".`);
   }
 }
 
