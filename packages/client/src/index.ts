@@ -13,6 +13,15 @@ export interface EvergreenConfig {
   registryId: string;
 }
 
+/**
+ * Mainnet registry, read from a live Namespace contract on 11 Nov 2026
+ * (`account`.config() -> registry: "registry.hos").
+ */
+export const MAINNET: EvergreenConfig = {
+  rpcUrl: "https://rpc.mainnet.near.org",
+  registryId: "registry.hos",
+};
+
 export type LeaseStatus = "active" | "grace" | "reclaimable" | "suspended" | "not_rented";
 
 export interface Lease {

@@ -35,7 +35,7 @@ Deadline: submit by **14 Nov 12:00 UTC** (hard close 23:59 UTC). Terms: `GLOSSAR
   - [x] Payment path: (a) Name calls registry via `w_execute_extension`, else (b) Name → Steward → registry
   - [x] Lapse a staked Name: where does stake end up? (stake-leak check)
 - [x] **Go/no-go**: GO
-- [ ] Search mainnet registry address (explorers, NEAR Accounts, release tags)
+- [x] Mainnet registry address: `registry.hos` (from `account`.config() on mainnet; wallet impl `impl.hos`, extension `ext.hos`, council `hos-root.sputnik-dao.near`). Live stats 11 Nov: 1,008 Namespaces, 79 Names, rate $3.66/NEAR, grace 14d.
 
 ### Spike RESULT (run 11 Nov, sandbox, `cd contracts/spike && cargo test --test spike -- --nocapture`) — GO
 - P1 PASS: after `transfer_sub_account`, Steward is registry owner AND wallet extension; it drives the Name (staked 30 NEAR).
@@ -56,11 +56,13 @@ Deadline: submit by **14 Nov 12:00 UTC** (hard close 23:59 UTC). Terms: `GLOSSAR
 - Next: build wasm (cargo near), new crate `contracts/spike` with probes P1 extension after transfer, P2 path (a), P3 lapse a staked Name, then re-rent and withdraw.
 
 ## 12 Nov
-- [ ] Steward robust: view-driven idempotent poke, two-phase unstake, refund claim, tips, `exit()`, lapse guard (unstake all before Grace ends), renewal window 30d/30s, edge cases (poke outside window, stale rate), tests
-- [ ] Client core + tests vs sandbox
-- [ ] CLI + `evergreen demo` end-to-end
-- [ ] Prebuilt wasm + checksums; GH Actions green
-- [ ] Mainnet decision (midday)
+- [x] Steward robust: view-driven idempotent poke, two-phase unstake, refund claim, tips, `exit()`, lapse guard (unstake all before Grace ends), renewal window 30d/30s, edge cases (poke outside window, stale rate), tests
+- [x] Client core + tests vs sandbox (6 scenarios, `pnpm test`)
+- [x] CLI + `evergreen demo` end-to-end (`pnpm demo`, ~2m20s)
+- [ ] Prebuilt wasm + checksums (done); GH Actions green (first run in progress)
+- [ ] Mainnet decision (address found, so technically GO; needs user: real NEAR, a real Name, a real pool choice)
+- NEW finding: the wallet refuses its Owner once expiry passes, so the Steward must finish (or evacuate) BEFORE expiry, not before Grace ends. Built in and tested.
+- Idea for web: mainnet is readable now, so the page can list all 79 real Names with their expiry dates.
 
 ## 13 Nov
 - [ ] Living card + ICU page; hosted on testnet copy
