@@ -1,0 +1,3 @@
+[submodule "contracts/upstream"]
+	path = contracts/upstream
+	url = https://github.com/houseofstake/tla-contracts

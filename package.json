@@ -1,0 +1,12 @@
+{
+  "name": "evergreen",
+  "private": true,
+  "description": "Evergreen Names: NEAR Top Level Account Names that keep themselves alive",
+  "license": "MIT",
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "dev:web": "pnpm --filter @evergreen-names/web dev"
+  }
+}

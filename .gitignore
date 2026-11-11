@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+target/
+coverage/
+.env*
+*.pem
+.DS_Store
+*.tsbuildinfo
+.vercel
+# private planning notes, not published
+Top Level Accounts Toolkit project brief.md
+# design reference images (third-party art, not published)
+apps/web/public/*.jpg
