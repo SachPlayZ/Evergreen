@@ -6,7 +6,11 @@
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "build": "pnpm -r build",
-    "test": "pnpm -r test",
-    "dev:web": "pnpm --filter @evergreen-names/web dev"
+    "test": "pnpm --filter @evergreen-names/client test",
+    "dev:web": "pnpm --filter @evergreen-names/web dev",
+    "demo": "pnpm --filter @evergreen-names/cli demo",
+    "evergreen": "pnpm --silent --filter @evergreen-names/cli evergreen",
+    "typecheck": "pnpm -r typecheck",
+    "build:contracts": "bash contracts/build.sh"
   }
 }

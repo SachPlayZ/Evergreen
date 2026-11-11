@@ -1,0 +1,21 @@
+{
+  "name": "@evergreen-names/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "evergreen": "tsx src/index.ts",
+    "demo": "tsx src/index.ts demo",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@evergreen-names/client": "workspace:*",
+    "@evergreen-names/sandbox": "workspace:*",
+    "tsx": "^4",
+    "near-sandbox": "0.3.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5"
+  }
+}

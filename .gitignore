@@ -15,3 +15,4 @@ Top Level Accounts Toolkit project brief.md
 # design reference images (third-party art, not published)
 apps/web/public/*.jpg
 contracts/spike/target/
+.evergreen/

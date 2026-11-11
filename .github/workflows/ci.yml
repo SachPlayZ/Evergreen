@@ -1,0 +1,27 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prebuilt wasm matches its checksums
+        run: cd contracts/wasm && sha256sum -c SHA256SUMS
+      - run: pnpm typecheck
+      - name: Tests (client against a local NEAR sandbox)
+        run: pnpm test
+      - name: Demo (the whole story, every claim checked)
+        run: pnpm demo
+      - name: Web builds
+        run: pnpm --filter @evergreen-names/web build

@@ -10,10 +10,11 @@ export function nearToYocto(near: number | string): bigint {
 }
 
 export function yoctoToNear(yocto: bigint | string, digits = 3): string {
-  const y = BigInt(yocto);
-  const whole = y / YOCTO;
-  const frac = (y % YOCTO).toString().padStart(24, "0").slice(0, digits);
-  return digits > 0 ? `${whole}.${frac}` : `${whole}`;
+  const unit = 10n ** BigInt(24 - digits);
+  const rounded = (BigInt(yocto) + unit / 2n) / unit;
+  const scale = 10n ** BigInt(digits);
+  const whole = rounded / scale;
+  return digits > 0 ? `${whole}.${(rounded % scale).toString().padStart(digits, "0")}` : `${whole}`;
 }
 
 export function provider(rpcUrl: string): JsonRpcProvider {
