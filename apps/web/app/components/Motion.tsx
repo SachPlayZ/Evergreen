@@ -15,7 +15,20 @@ export function SmoothScroll() {
       lenis.raf(time);
       raf = requestAnimationFrame(loop);
     });
+    // A link like /#live lands before live data and art have set the page's height.
+    // Keep the target pinned while the layout settles, until the reader scrolls (4s at most).
+    const target = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    const pin = () => target && lenis.scrollTo(target, { immediate: true, force: true });
+    const settle = new ResizeObserver(pin);
+    const release = () => settle.disconnect();
+    if (target) {
+      settle.observe(document.body);
+      setTimeout(release, 4000);
+      addEventListener("wheel", release, { once: true });
+      addEventListener("touchstart", release, { once: true });
+    }
     return () => {
+      release();
       cancelAnimationFrame(raf);
       lenis.destroy();
     };
