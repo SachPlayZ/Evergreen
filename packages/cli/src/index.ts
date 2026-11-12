@@ -13,7 +13,7 @@
  *   evergreen steward adopt <name> --as <patron> [--stake 30]
  *   evergreen tip <name> <near> --as <account>
  *   evergreen poke <name> --as <account>
- *   evergreen keeper run                keep poking every Evergreen Name
+ *   evergreen keeper run [--restart-on-lapse]   keep poking every Evergreen Name
  *   evergreen exit <name> --as <patron>
  *   evergreen testnet deploy --account <you.testnet> [--rpc <url>]
  *                                       deploy the stack and the live scene to testnet (resumes if it stops)
@@ -35,6 +35,8 @@ const SANDBOX_FILE = join(ROOT, ".evergreen/sandbox.json");
 const TESTNET_FILE = join(ROOT, "deploy/testnet.json");
 const ENV_FILE = process.env.EVERGREEN_NETWORK === "testnet" ? TESTNET_FILE : SANDBOX_FILE;
 const PEOPLE = ["ana", "ben", "fan", "keeper"];
+/** `keeper run --restart-on-lapse` exits with this when an Evergreen Name lapses (see deploy/evergreen-keeper.service). */
+const LAPSED_EXIT = 75;
 const near = (y: bigint) => `${yoctoToNear(y, 3)} NEAR`;
 
 interface Env {
@@ -253,7 +255,14 @@ async function main(): Promise<void> {
           return [];
         });
         for (const lease of leases) {
-          if (lease.status !== "reclaimable" || loadEnv().stewards[lease.name]) continue;
+          if (lease.status !== "reclaimable") continue;
+          if (loadEnv().stewards[lease.name]) {
+            // An Evergreen Name lapses only if the Keeper was starved or down (its stake is safe:
+            // the lapse guard pulled it back). Hosted demo: exit so systemd starts a fresh chain.
+            if (flags["restart-on-lapse"] === undefined) continue;
+            console.log(`${lease.name}: lapsed; exiting ${LAPSED_EXIT} so the demo chain restarts`);
+            process.exit(LAPSED_EXIT);
+          }
           const since = (gone[lease.name] ??= Date.now());
           if (Date.now() - since < 20_000) continue;
           delete gone[lease.name];

@@ -9,7 +9,10 @@ PartOf=evergreen-chain.service
 [Service]
 User=ubuntu
 WorkingDirectory=/home/ubuntu/evergreen
-ExecStart=/usr/bin/env pnpm --silent evergreen keeper run
+ExecStart=/usr/bin/env pnpm --silent evergreen keeper run --restart-on-lapse
+# Exit 75: an Evergreen Name lapsed (keeper starved or down). Start a fresh chain; this unit restarts with it.
+# "+" runs this one line as root, so the keeper itself needs no sudo.
+ExecStopPost=+/bin/sh -c '[ "$EXIT_STATUS" = 75 ] && systemctl restart --no-block evergreen-chain || true'
 Restart=always
 RestartSec=10
 
