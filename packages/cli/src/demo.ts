@@ -76,8 +76,8 @@ export async function runDemo(): Promise<void> {
     while ((await client.chainTimeNs()) < bobLease.graceEndsAtNs + 2n * NS) {
       s = await client.getSteward(stewardId);
       // One term of rewards per term, like a real pool compressed in time.
-      if (s.lease.secondsLeft <= WINDOW && s.rewardsYocto < s.rentYocto && s.phase === "Idle") {
-        await sb.dripReward("alice.demo", (s.rentYocto * 12n) / 10n);
+      if (s.lease.secondsLeft <= WINDOW && s.rewardsYocto < s.needYocto && s.phase === "Idle") {
+        await sb.dripReward("alice.demo", s.needYocto - s.rewardsYocto);
         drips++;
       }
       const result = await client.poke(keeper, stewardId);

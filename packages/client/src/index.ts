@@ -17,6 +17,9 @@ export interface EvergreenConfig {
  * Mainnet registry, read from a live Namespace contract on 11 Nov 2026
  * (`account`.config() -> registry: "registry.hos").
  */
+/** Mirrors BUFFER_BPS in contracts/steward: the Steward unstakes Rent plus 10%, in case the price moves. */
+const STEWARD_BUFFER_BPS = 1_000n;
+
 export const MAINNET: EvergreenConfig = {
   rpcUrl: "https://rpc.mainnet.near.org",
   registryId: "registry.hos",
@@ -101,6 +104,8 @@ export interface StewardStatus {
   rewardsYocto: bigint;
   /** Next Rent, in yoctoNEAR. */
   rentYocto: bigint;
+  /** Rewards the Steward needs before it will renew: Rent plus its 10% price buffer. */
+  needYocto: bigint;
   lease: Lease;
 }
 
@@ -391,6 +396,7 @@ export class Evergreen {
       stakedYocto,
       rewardsYocto: stakedYocto > principal ? stakedYocto - principal : 0n,
       rentYocto: price.rentYocto,
+      needYocto: price.rentYocto + (price.rentYocto * STEWARD_BUFFER_BPS) / 10_000n,
       lease,
     };
   }

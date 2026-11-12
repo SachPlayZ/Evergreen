@@ -238,8 +238,9 @@ async function main(): Promise<void> {
           try {
             const s = await client.getSteward(stewardId);
             const inWindow = s.lease.secondsLeft <= Number(s.windowNs / 1_000_000_000n);
-            if (inWindow && s.rewardsYocto < s.rentYocto && s.phase === "Idle") {
-              await call(relay, env.poolId, "drip_reward", { account_id: evergreen }, { deposit: (s.rentYocto * 12n) / 10n });
+            // Top rewards up to exactly what the Steward needs, like a pool's yield arriving on time.
+            if (inWindow && s.rewardsYocto < s.needYocto && s.phase === "Idle") {
+              await call(relay, env.poolId, "drip_reward", { account_id: evergreen }, { deposit: s.needYocto - s.rewardsYocto });
             }
             // A poke is a transaction; only send one when the Steward has something to do.
             const evacuated = typeof s.phase === "object" && "Evacuated" in s.phase;
