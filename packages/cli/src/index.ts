@@ -85,7 +85,10 @@ async function main(): Promise<void> {
   const { words, flags } = parse(process.argv.slice(2));
   const [command, ...rest] = words;
 
-  if (command === "demo") return runDemo();
+  if (command === "demo") {
+    await runDemo();
+    process.exit(0); // nothing left to wait for; don't let a stray handle keep a judge's terminal open
+  }
 
   if (command === "testnet") {
     if (rest[0] !== "deploy" || !flags.account) throw new Error("Usage: evergreen testnet deploy --account <you.testnet>");

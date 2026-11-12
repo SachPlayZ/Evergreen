@@ -310,7 +310,11 @@ export async function startSandbox(options: SandboxOptions = {}): Promise<Evergr
       });
     },
     async stop() {
+      // The sandbox can ignore SIGTERM on a busy machine, and tearDown waits for it to exit.
+      const child = (sandbox as unknown as { childProcess?: { kill(signal: string): void } }).childProcess;
+      const force = setTimeout(() => child?.kill("SIGKILL"), 5000);
       await sandbox.tearDown();
+      clearTimeout(force);
     },
   };
 }
