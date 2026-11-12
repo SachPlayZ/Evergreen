@@ -3,7 +3,8 @@
  * evergreen: one command per step of the Evergreen story.
  *
  *   evergreen demo                      run the whole story in a fresh sandbox
- *   evergreen sandbox [--story]         start a sandbox and keep it running (--story sets up alice.demo and bob.demo)
+ *   evergreen sandbox [--story] [--port 3030]
+ *                                       start a sandbox and keep it running (--story sets up alice.demo and bob.demo)
  *   evergreen price <name>
  *   evergreen rent <name> --as <account>
  *   evergreen status <name>
@@ -102,7 +103,7 @@ async function main(): Promise<void> {
   if (command === "sandbox") {
     if (ENV_FILE !== SANDBOX_FILE) throw new Error("Unset EVERGREEN_NETWORK to start a sandbox.");
     console.log("Starting sandbox (60s Leases, 60s Grace, DEMO pool)...");
-    const sb = await startSandbox({ people: PEOPLE });
+    const sb = await startSandbox({ people: PEOPLE, rpcPort: flags.port ? Number(flags.port) : undefined });
     saveEnv({ rpcUrl: sb.rpcUrl, registryId: sb.registryId, namespace: sb.namespace, poolId: sb.poolId, stewards: {} }, SANDBOX_FILE);
     console.log(`Sandbox ready at ${sb.rpcUrl}. Namespace: ${sb.namespace}. People: ${PEOPLE.join(", ")}.`);
     if (flags.story !== undefined) {

@@ -39,6 +39,8 @@ export interface SandboxOptions {
   /** Extra funded accounts to create at genesis (people in your scenario). */
   people?: string[];
   nearUsd?: number;
+  /** Fixed RPC port (bound to localhost). Random if not set. */
+  rpcPort?: number;
 }
 
 export interface EvergreenSandbox {
@@ -231,7 +233,7 @@ export async function startSandbox(options: SandboxOptions = {}): Promise<Evergr
   const ids = [...Object.values(IDS), ...(options.people ?? [])];
   const sandbox = await Sandbox.start({
     version: SANDBOX_VERSION,
-    config: { additionalAccounts: ids.map((id) => GenesisAccount.createDefault(id)) },
+    config: { rpcPort: options.rpcPort, additionalAccounts: ids.map((id) => GenesisAccount.createDefault(id)) },
   });
   const client = new Evergreen({ rpcUrl: sandbox.rpcUrl, registryId: IDS.registry });
   const account = (id: string) => client.account(id, DEFAULT_PRIVATE_KEY);

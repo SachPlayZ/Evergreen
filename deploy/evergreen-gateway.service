@@ -1,0 +1,16 @@
+# Read-only gateway the hosted page reads the demo chain through: 127.0.0.1:4000, served over HTTPS by nginx.
+[Unit]
+Description=Evergreen read-only RPC gateway
+After=evergreen-chain.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/evergreen
+Environment=GATEWAY_PORT=4000
+Environment=UPSTREAM=http://127.0.0.1:3030
+ExecStart=/usr/bin/env node deploy/rpc-gateway.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

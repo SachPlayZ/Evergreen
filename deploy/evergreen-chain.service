@@ -1,0 +1,19 @@
+# The demo chain: a NEAR sandbox with the unmodified Top Level Accounts contracts, 60s Leases,
+# and the story (alice.demo Evergreen, bob.demo left alone). RPC on 127.0.0.1:3030 only.
+# A restart starts a fresh chain and replays the story.
+[Unit]
+Description=Evergreen demo chain (NEAR sandbox)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/evergreen
+# "-": a failed pull (no network yet) must not stop the chain.
+ExecStartPre=-/usr/bin/git pull --ff-only
+ExecStart=/usr/bin/env pnpm --silent evergreen sandbox --story --port 3030
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
