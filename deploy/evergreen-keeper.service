@@ -4,6 +4,7 @@
 [Unit]
 Description=Evergreen keeper
 After=evergreen-chain.service
+PartOf=evergreen-chain.service
 
 [Service]
 User=ubuntu

@@ -2,6 +2,7 @@
 [Unit]
 Description=Evergreen read-only RPC gateway
 After=evergreen-chain.service
+PartOf=evergreen-chain.service
 
 [Service]
 User=ubuntu
