@@ -68,12 +68,12 @@ Deadline: submit by **14 Nov 12:00 UTC** (hard close 23:59 UTC). Terms: `GLOSSAR
 - [x] Living card + ICU + mainnet census page (`pnpm evergreen sandbox --story`, `pnpm evergreen keeper run`, `pnpm dev:web`)
 - [x] Host the page: https://evergreen-names.vercel.app (Vercel, Git connected, deploys on push to main)
 - [x] `evergreen testnet deploy` (resumable, Rent scaled 1/500, ~74 testnet NEAR); rehearsed on sandbox
-- [ ] User: near-cli key at ~/.near-credentials/testnet/<account>.json, then run the deploy
-- [ ] Set EVERGREEN_* env vars on Vercel; keeper on Oracle VM (deploy/evergreen-keeper.service)
+- [x] Testnet copy skipped (~74 NEAR, mostly burned global wallet code). Hosted demo instead: sandbox + keeper + read-only gateway on the Oracle VM, nginx HTTPS at 152-67-0-76.sslip.io; Vercel EVERGREEN_* set
+- [x] Keeper `--restart-on-lapse`: if alice ever lapses (keeper starved), systemd restarts the chain
+- [x] README: problem, live link, do X see Y, real vs demo, built with
 - [ ] Mainnet Evergreen Name (if go)
 - [ ] User: X launch of mainnet Evergreen Name + ICU (if mainnet go)
 - [ ] Adopt flow button
-- [ ] README "do X, see Y", labels, libraries/AI-written list, licence; short AGENTS.md
 - [ ] Open upstream issue
 
 ## 14 Nov (by 12:00 UTC)
