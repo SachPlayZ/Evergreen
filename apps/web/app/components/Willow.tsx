@@ -16,9 +16,8 @@ function jitter(col: number): number {
 
 export type WillowState = "active" | "grace" | "reclaimable" | "suspended" | "not_rented";
 
-export function Willow({ health, state, size = 280 }: { health: number; state: WillowState; size?: number }) {
-  const alive = state === "active" || state === "grace";
-  const h = alive ? Math.max(0, Math.min(1, health)) : 0;
+/** The willow's dots for a share `h` (0..1) of the Lease left. Pure, so the server can draw it too (/api/nft). */
+export function willowGeometry(h: number) {
   const dots: { cx: number; cy: number; lit: boolean; row: number; col: number }[] = [];
   for (let col = 0; col < COLS; col++) {
     const x = (col - MID) / (MID + 0.5);
@@ -36,6 +35,14 @@ export function Willow({ health, state, size = 280 }: { health: number; state: W
   }
   const width = COLS * GAP + 2;
   const height = (ROWS + 5) * GAP + 2;
+  const ground = Array.from({ length: COLS }, (_, col) => ({ cx: col * GAP + 6, cy: (ROWS + 4) * GAP + 6 }));
+  return { dots, trunk, ground, width, height, cols: COLS, jitter };
+}
+
+export function Willow({ health, state, size = 280 }: { health: number; state: WillowState; size?: number }) {
+  const alive = state === "active" || state === "grace";
+  const h = alive ? Math.max(0, Math.min(1, health)) : 0;
+  const { dots, trunk, ground, width, height } = willowGeometry(h);
   return (
     <svg
       className={`willow willow-${state}`}
@@ -64,8 +71,8 @@ export function Willow({ health, state, size = 280 }: { health: number; state: W
             ))}
         </g>
       ))}
-      {Array.from({ length: COLS }, (_, col) => (
-        <circle key={`g${col}`} className="willow-ground" cx={col * GAP + 6} cy={(ROWS + 4) * GAP + 6} r={1.6} />
+      {ground.map((d, col) => (
+        <circle key={`g${col}`} className="willow-ground" cx={d.cx} cy={d.cy} r={1.6} />
       ))}
     </svg>
   );

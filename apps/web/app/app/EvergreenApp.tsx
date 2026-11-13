@@ -389,6 +389,11 @@ function NameCard({ n, me, act, readOnly }: { n: NameView; me: string; act: Act;
           </div>
         )}
       </dl>
+      <p className="small">
+        <a href={`/api/nft/${n.name}.png`} target="_blank" rel="noreferrer">
+          Live NFT card <ArrowUpRight aria-hidden="true" />
+        </a>
+      </p>
 
       {readOnly ? null : n.evergreen ? (
         <div className="actions">
@@ -518,7 +523,7 @@ function Adopt({ n, me, act }: { n: NameView; me: string; act: Act }) {
         </div>
       </dl>
       {yearly < rentNear && <p className="small warn">Rewards would not cover Rent: stake more, or the Steward pulls the Stake to safety before expiry.</p>}
-      <p className="small">You approve 4 transactions: create your Steward, hand it the Name, fund the Name, stake.</p>
+      <p className="small">You approve 2 transactions: create your Steward holding the Stake, then send it your NFT (NEP-171 <code>nft_transfer_call</code>). The moment it arrives, the Steward moves the Stake onto the Name and stakes it.</p>
       <button type="button" className="btn" disabled={!txs} onClick={() => txs && act(`Make ${n.name} Evergreen`, txs)}>
         Make it Evergreen
       </button>

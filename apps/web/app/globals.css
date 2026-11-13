@@ -913,6 +913,18 @@ a.hero-card:hover {
 .nft-powers h3 {
   font-size: 22px;
 }
+.nft-live {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  align-items: start;
+}
+.nft-card-img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--r-outer);
+  border: 1px solid var(--line);
+}
 .nft-proof {
   margin: 0;
   display: grid;

@@ -92,7 +92,7 @@ export function UseIt() {
           <li>
             <h3>Make it Evergreen</h3>
             <p className="small">
-              You sign four transactions: create your Steward, hand it the Name, fund the Name, stake. About 3.8 NEAR: 3 staked
+              You sign two transactions: create your Steward holding the Stake, then send it the NFT. On arrival it funds the Name and stakes. About 3.8 NEAR: 3 staked
               and never spent, 0.3 for the Steward account, 0.5 left on the Name.
             </p>
             <Cmd text={`pnpm evergreen testnet adopt ${mine} --account ${you} --stake 3`} />

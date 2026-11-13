@@ -9,7 +9,7 @@ Needs Node 22+ and pnpm. No Rust, no keys, no network accounts.
 ```bash
 pnpm install
 pnpm demo      # whole story in a local sandbox, ~2.5 min, exits non-zero if any claim fails
-pnpm test      # 6 scenarios through the client against the same sandbox, ~2.5 min
+pnpm test      # 9 scenarios through the client against the same sandbox, ~3 min
 ```
 
 `pnpm demo` prints `PASS`/`FAIL` per claim. What to look for: `alice.demo renewed itself 2 times`, `principal untouched`, `bob.demo is Reclaimable`.

@@ -1,7 +1,7 @@
 /** Evergreen Names: a Steward owns the Name and keeps it alive. Sandbox, 60-second Leases, DEMO pool. */
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { startSandbox, type EvergreenSandbox } from "@evergreen-names/sandbox";
-import { nearToYocto, sendTxs, unstakeAllTx, withdrawFromPoolTx, withdrawFromNameTx } from "../src/index";
+import { adoptTxs, nearToYocto, sendNftTx, sendTxs, stewardIdFor, unstakeAllTx, withdrawFromPoolTx, withdrawFromNameTx } from "../src/index";
 
 let sb: EvergreenSandbox;
 const NS = 1_000_000_000n;
@@ -145,4 +145,47 @@ test("a Name made Evergreen from the published Steward code can be taken back, S
   const anaMid = await sb.balanceOf("ana");
   await sendTxs(ana, [withdrawFromNameTx(name, "ana", stake)]);
   expect(await sb.balanceOf("ana")).toBeGreaterThan(anaMid + stake - nearToYocto("0.01"));
+
+  // A Steward only accepts its own Name from its own Patron. Anyone else's NFT is handed straight back.
+  const fan = sb.account("fan");
+  await sb.client.rent(fan, "stray.demo");
+  await sendTxs(fan, [sendNftTx(sb.registryId, "stray.demo", stewardId)]);
+  expect((await sb.client.getLease("stray.demo"))!.owner).toBe("fan");
+
+  // The Patron makes it Evergreen again just by sending the NFT back.
+  await sendTxs(ana, [sendNftTx(sb.registryId, name, stewardId)]);
+  s = await sb.client.getSteward(stewardId);
+  expect(s.lease.owner).toBe(stewardId);
+});
+
+test("sending the NFT to its Steward is what makes it Evergreen: the Stake moves onto the Name and is staked", async () => {
+  const ana = sb.account("ana");
+  const name = "sent.demo";
+  await sb.client.rent(ana, name);
+  const stake = nearToYocto(4);
+  const [create, send] = adoptTxs({
+    registryId: sb.registryId,
+    name,
+    patron: "ana",
+    pool: sb.poolId,
+    stakeYocto: stake,
+    windowSecs: WINDOW,
+    lapseGuardSecs: GUARD,
+    code: { globalAccountId: "code" },
+  });
+  const stewardId = stewardIdFor(name, "ana");
+  await sendTxs(ana, [create]);
+  // Before the NFT arrives the Steward holds the Stake and owns nothing.
+  expect((await sb.client.getLease(name))!.owner).toBe("ana");
+  expect(await sb.balanceOf(stewardId)).toBeGreaterThan(stake);
+
+  // One NEP-171 transfer: nft_transfer_call → Steward.nft_on_transfer → the Name is funded and stakes.
+  expect(send.receiverId).toBe(sb.registryId);
+  await sendTxs(ana, [send]);
+  const s = await sb.client.getSteward(stewardId);
+  expect(s.lease.owner).toBe(stewardId);
+  expect(s.stakedYocto).toBe(stake);
+  expect(s.principalYocto).toBe(stake);
+  expect(await sb.balanceOf(name)).toBeGreaterThanOrEqual(nearToYocto("0.5"));
+  expect(await sb.balanceOf(stewardId)).toBeLessThan(nearToYocto("0.3"));
 });

@@ -26,6 +26,8 @@ curl -s "https://evergreen-names.vercel.app/api/names?owner=you.testnet"
 
 Returns every Name `you.testnet` holds (directly, or through its own Steward): `status`, `secondsLeft`, `balanceYocto` (plain NEAR on the Name), `evergreen`, `steward` (`phase`, `principalYocto`, `stakedYocto`, `rewardsYocto`, `needYocto`, `renewals`), and `pool` (the Name's position in the pool, also after you take it back). 1 NEAR = 10^24 yocto.
 
+Live card image of any Name (PNG, 1200×630, for sharing or showing the user): `https://evergreen-names.vercel.app/api/nft/<label or full name>.png`
+
 Direct views (no signing):
 
 | Question | Contract · method · args |
@@ -60,6 +62,7 @@ Or raw transactions (near-cli-rs: `near contract call-function as-transaction <r
 | --- | --- | --- | --- | --- |
 | Rent | anyone | registry | `rent_sub_account` · `{"tla_id":"ev.sachindraz.testnet","name":"mybot"}` | `total_yocto` from `get_rent_price` · 300 Tgas |
 | Pay Rent (manual renewal) | anyone | registry | `renew_sub_account` · same | `rent_yocto` · 150 Tgas |
+| Send the NFT to a contract | owner | registry | `nft_transfer_call` · `{"receiver_id","token_id":"<full name>","msg"}` | 1 yocto · 300 Tgas |
 | Transfer Name | owner | registry | `transfer_sub_account` · `{"tla_id","name","new_owner"}` | 1 yocto · 150 Tgas |
 | Claim overpaid Rent | anyone owed | registry | `claim_refund` · `{}` | 0 · 30 Tgas |
 | Poke (advance renewal) | anyone | steward | `poke` · `{}` | 0 · 300 Tgas |
@@ -69,12 +72,10 @@ Or raw transactions (near-cli-rs: `near contract call-function as-transaction <r
 | Unstake the Name's Stake | owner (after exit) | the Name | `w_execute_extension` with a `function_call` action: `{"action":"function_call","payload":{"function_name":"unstake_all","args":"e30=","deposit":"0","gas":"30000000000000"}}`, receiver the pool | 1 yocto · 50 Tgas |
 | Withdraw from pool (~4 epochs later) | owner | the Name | same, `function_name":"withdraw"`, `args` = base64 of `{"amount":"<unstaked yocto>"}` | 1 yocto · 50 Tgas |
 
-**Make it Evergreen** = four transactions, in this order, signed by the current owner (the patron):
+**Make it Evergreen** = two transactions, signed by the current owner (the patron). The second one is a plain NEP-171 transfer of the NFT:
 
-1. To `ev-mybot-ev-sachindraz-testnet.you.testnet`: `CreateAccount`, `Transfer` 0.3 NEAR, `UseGlobalContract {accountId: "evergreen-steward.testnet"}`, `FunctionCall new {"registry":"registry.sachindraz.testnet","tla_id":"ev.sachindraz.testnet","label":"mybot","pool":"aurora.pool.f863973.m0","patron":"you.testnet","window_ns":"2592000000000000","lapse_guard_ns":"259200000000000"}` (30 Tgas).
-2. Registry `transfer_sub_account` to the Steward (1 yocto).
-3. `Transfer` stake + 0.5 NEAR to the Name (after step 2: a transfer sweeps the Name's NEAR).
-4. Steward `stake {"amount":"<stake yocto>"}` (100 Tgas, patron only).
+1. To `ev-mybot-ev-sachindraz-testnet.you.testnet`: `CreateAccount`, `Transfer` 0.3 NEAR + stake + 0.5 NEAR, `UseGlobalContract {accountId: "evergreen-steward.testnet"}`, `FunctionCall new {"registry":"registry.sachindraz.testnet","tla_id":"ev.sachindraz.testnet","label":"mybot","pool":"aurora.pool.f863973.m0","patron":"you.testnet","window_ns":"2592000000000000","lapse_guard_ns":"259200000000000"}` (30 Tgas).
+2. Registry `nft_transfer_call {"receiver_id":"ev-mybot-ev-sachindraz-testnet.you.testnet","token_id":"mybot.ev.sachindraz.testnet","msg":"{\"stake\":\"<stake yocto>\"}"}` (1 yocto, 300 Tgas). The Steward's `nft_on_transfer` moves its spare NEAR onto the Name and stakes `stake`. It hands back any other NFT or sender.
 
 Code for all of these as plain `{receiverId, actions}`: `packages/client/src/txs.ts` in the repo.
 

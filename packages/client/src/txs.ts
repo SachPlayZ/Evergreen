@@ -58,9 +58,9 @@ export function claimRefundTx(registryId: string): Tx {
 }
 
 /**
- * Makes a Name Evergreen. The Patron (current Owner) signs four transactions, in order:
- * create the Steward, hand it the Name, fund the Name, stake. The Name is funded after the hand-over,
- * because a transfer sweeps its NEAR.
+ * Makes a Name Evergreen in two transactions: create the Steward holding the Stake, then send it the
+ * NFT with `nft_transfer_call`. On arrival the Steward moves the Stake onto the Name and stakes it.
+ * The Name is funded only after the hand-over, because the transfer sweeps the Name's NEAR.
  */
 export function adoptTxs(o: {
   registryId: string;
@@ -88,7 +88,8 @@ export function adoptTxs(o: {
       receiverId: stewardId,
       actions: [
         actions.createAccount(),
-        actions.transfer(balance),
+        // The Steward holds the Stake until the NFT arrives, then moves it onto the Name.
+        actions.transfer(balance + o.stakeYocto + buffer),
         code,
         call(
           "new",
@@ -105,10 +106,17 @@ export function adoptTxs(o: {
         ),
       ],
     },
-    transferNameTx(o.registryId, o.name, stewardId),
-    { receiverId: o.name, actions: [actions.transfer(o.stakeYocto + buffer)] },
-    { receiverId: stewardId, actions: [call("stake", { amount: o.stakeYocto.toString() }, 100n * TGAS)] },
+    sendNftTx(o.registryId, o.name, stewardId, JSON.stringify({ stake: o.stakeYocto.toString() })),
   ];
+}
+
+/**
+ * Owner: send the Name (a NEP-171 token) to a contract with `nft_transfer_call`. A Steward receiving its
+ * own Name from its Patron funds the Name and stakes it in the same call (`msg` = `{"stake":"<yocto>"}`);
+ * anything else is handed back by the registry.
+ */
+export function sendNftTx(registryId: string, name: string, receiverId: string, msg = ""): Tx {
+  return { receiverId: registryId, actions: [call("nft_transfer_call", { receiver_id: receiverId, token_id: name, msg }, 300n * TGAS, ONE_YOCTO)] };
 }
 
 /** Anyone: advance the Steward one step (it does nothing if nothing is due). */

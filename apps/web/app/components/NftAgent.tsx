@@ -99,7 +99,11 @@ export function NftAgent() {
             </li>
           ))}
         </ol>
-        <LiveToken />
+        <div className="nft-live">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="nft-card-img" src={`/api/nft/${NAME}.png`} alt={`Live card of the NFT ${NAME}: its willow, Lease left and Stake`} width={1200} height={630} loading="lazy" />
+          <LiveToken />
+        </div>
       </Reveal>
     </section>
   );

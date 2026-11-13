@@ -307,9 +307,8 @@ export class Evergreen {
   // ---- Evergreen Names ----
 
   /**
-   * Makes a Name Evergreen. The Patron (the current Owner) signs four steps:
-   * create the Steward, hand it the Name, fund the Name, stake.
-   * The Name is funded only after the hand-over, because a transfer sweeps its NEAR.
+   * Makes a Name Evergreen. The Patron (the current Owner) signs two steps: create the Steward holding
+   * the Stake, then send it the NFT (`nft_transfer_call`). On arrival the Steward funds the Name and stakes.
    */
   async adopt(patron: Account, name: string, options: AdoptOptions): Promise<string> {
     const code = options.stewardCode ?? (options.stewardWasm && { wasm: options.stewardWasm });

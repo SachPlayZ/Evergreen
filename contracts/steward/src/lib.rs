@@ -28,6 +28,10 @@ const RENEW_GAS: Gas = Gas::from_tgas(100);
 const WALLET_OVERHEAD_GAS: Gas = Gas::from_tgas(20);
 /// Unstake next Rent plus 10%. The registry credits the excess back.
 const BUFFER_BPS: u128 = 1_000;
+/// Kept on the Steward beyond its storage when it funds the Name.
+const RESERVE: u128 = 100_000_000_000_000_000_000_000; // 0.1 NEAR
+/// Left liquid on the Name when `nft_on_transfer` is told to stake everything.
+const LIQUID_BUFFER: u128 = 500_000_000_000_000_000_000_000; // 0.5 NEAR
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -136,6 +140,51 @@ impl Steward {
         require!(self.phase == Phase::Idle, "busy");
         self.principal += amount.0;
         self.exec(&self.pool.clone(), "deposit_and_stake", json!({}), amount.0, POOL_GAS)
+    }
+
+    /// NEP-171 receiver: the Patron sends the Name (the NFT) here with `nft_transfer_call` and it
+    /// starts working. The registry calls this after the rotation (and its sweep) is done, so the
+    /// Steward's spare NEAR moves onto the Name and is staked in one receipt.
+    /// `msg`: `{"stake":"<yocto>"}`, or empty to stake everything spare but LIQUID_BUFFER.
+    /// Returns true (give the NFT back) for any other token or sender.
+    pub fn nft_on_transfer(
+        &mut self,
+        sender_id: AccountId,
+        previous_owner_id: AccountId,
+        token_id: String,
+        msg: String,
+    ) -> bool {
+        require!(env::predecessor_account_id() == self.registry, "only_registry");
+        if token_id != self.name.as_str() || previous_owner_id != self.patron || sender_id != self.patron {
+            return true;
+        }
+        let keep = env::storage_byte_cost().as_yoctonear() * u128::from(env::storage_usage()) + RESERVE;
+        let spare = env::account_balance().as_yoctonear().saturating_sub(keep);
+        let asked = serde_json::from_str::<Value>(&msg)
+            .ok()
+            .and_then(|v| v["stake"].as_str().and_then(|s| s.parse::<u128>().ok()));
+        let stake = match asked {
+            Some(s) if s <= spare => s,
+            Some(_) => return true,
+            None => spare.saturating_sub(LIQUID_BUFFER),
+        };
+        if spare == 0 {
+            // Handed back after an exit: its Stake is still in the pool. Just keep it.
+            return false;
+        }
+        let mut name = Promise::new(self.name.clone()).transfer(NearToken::from_yoctonear(spare));
+        if stake > 0 && self.phase == Phase::Idle {
+            self.principal += stake;
+            let request = request(&self.pool, "deposit_and_stake", json!({}), stake, POOL_GAS);
+            name = name.function_call(
+                "w_execute_extension".to_string(),
+                to_vec(json!({ "request": request })),
+                ONE_YOCTO,
+                POOL_GAS.saturating_add(WALLET_OVERHEAD_GAS),
+            );
+        }
+        name.detach();
+        false
     }
 
     /// Lifeline: anyone sends NEAR; it lands on the Name and is staked as principal.

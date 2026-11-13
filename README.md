@@ -37,6 +37,8 @@ Most NFTs are a pointer to a JPEG. This one is an economic agent. Every NEAR Nam
 | **pays its own bills** | The Steward renews the Lease from rewards only | demo: *"renewed itself 2 times with no payment from ana"*, *"principal untouched"* |
 | **can't die of neglect** | `poke` is permissionless; no server is trusted | demo step 5; the hosted keeper is just one poker among anyone |
 | **can be kept alive by strangers** | Anyone can send a Lifeline (`tip`) that joins the stake | demo: *"fan's Tip joined the Stake"* |
+| **becomes self-sustaining when you send it to a contract** | `nft_transfer_call` to its Steward; the Steward's NEP-171 `nft_on_transfer` funds the Name and stakes it in the same call. Any other NFT or sender is handed straight back | test *"sending the NFT to its Steward is what makes it Evergreen…"* · `nft_on_transfer` in [lib.rs](contracts/steward/src/lib.rs) |
+| **shows its own health** | A live card: the willow is the share of the Lease left, plus its Stake and renewals | [`/api/nft/evergreen.png`](https://evergreen-names.vercel.app/api/nft/evergreen.png) |
 | **is owned by code, and comes back** | `nft_token(...).owner_id` is the Steward contract; `exit` returns the NFT, its NEAR and its stake to the patron | test *"…taken back, Stake and all, into the Patron's hands"* |
 | **is operable by AI agents** | Every action is a plain transaction; state is JSON | [`/agents.md`](https://evergreen-names.vercel.app/agents.md), [`/api/names`](https://evergreen-names.vercel.app/api/names?owner=evergreen-try-06844.testnet) |
 
@@ -87,7 +89,7 @@ Needs **Node 22+** and **pnpm**. Everything runs on a local NEAR sandbox (a real
 
 ```bash
 pnpm install
-pnpm test    # ~3 min · 8 scenarios through the TypeScript client against a local NEAR chain
+pnpm test    # ~3 min · 9 scenarios through the TypeScript client against a local NEAR chain
 pnpm demo    # ~2.5 min · the whole story end to end · PASS/FAIL per claim · exits non-zero on any FAIL
 ```
 
@@ -108,7 +110,7 @@ pnpm demo    # ~2.5 min · the whole story end to end · PASS/FAIL per claim · 
    PASS  alice.demo is back with ana; a Name is never locked in
 ```
 
-Seconds left and the staked total vary slightly run to run. **Expected `pnpm test`:** `Test Files 3 passed (3)`, `Tests 8 passed (8)`.
+Seconds left and the staked total vary slightly run to run. **Expected `pnpm test`:** `Test Files 3 passed (3)`, `Tests 9 passed (9)`.
 
 CI runs the same commands on every push, plus `pnpm typecheck`, a SHA-256 check of every prebuilt contract, and a production build of the page: [ci.yml](.github/workflows/ci.yml).
 
@@ -172,7 +174,7 @@ Anyone can do this today with free testnet NEAR. You get a real Name on a House 
 Connect a testnet wallet (Meteor, Intear, Nightly, Ledger, or NEAR CLI via NEAR Connect), then:
 
 1. **Rent a Name**: type a label, see if it's free and what it costs, approve one transaction.
-2. **Make it Evergreen**: pick a stake, see the yearly rewards vs Rent estimate, approve four transactions in one go.
+2. **Make it Evergreen**: pick a stake, see the yearly rewards vs Rent estimate, approve two transactions: create your Steward, then **send it the NFT** (`nft_transfer_call`); on arrival the Steward stakes for the Name.
 3. **Manage it**: add to the Stake, poke, take it back, pay Rent by hand, transfer the Name, withdraw NEAR from the Name, and after taking it back unstake and withdraw from the pool, or hand it back to its Steward.
 
 Look at any account read-only, no wallet needed: [`/app?account=evergreen-try-06844.testnet`](https://evergreen-names.vercel.app/app?account=evergreen-try-06844.testnet). Agents: [`/agents.md`](https://evergreen-names.vercel.app/agents.md) (method reference + rules), [`/api/names?owner=you.testnet`](https://evergreen-names.vercel.app/api/names?owner=evergreen-try-06844.testnet) (state as JSON), and a copyable agent prompt on the app page.
@@ -206,7 +208,7 @@ pnpm evergreen testnet rent mybot --account you.testnet
 # mybot.ev.sachindraz.testnet is yours: an NFT and a real account, Lease ends in 365 days.
 ```
 
-**2. Make it Evergreen.** Four transactions you sign: create your Steward, hand it the Name, fund the Name, stake. About 3.8 NEAR: 3 staked (your principal, never spent), 0.3 for the Steward account (its code is the published global contract `evergreen-steward.testnet`, so nothing big is deployed), 0.5 left liquid on the Name.
+**2. Make it Evergreen.** Two transactions you sign: create your Steward (holding the Stake), then send it the NFT with `nft_transfer_call`. The Steward's `nft_on_transfer` moves the Stake onto the Name and stakes it, in the same call. About 3.8 NEAR: 3 staked (your principal, never spent), 0.3 for the Steward account (its code is the published global contract `evergreen-steward.testnet`, so nothing big is deployed), 0.5 left liquid on the Name.
 
 ```bash
 pnpm evergreen testnet adopt mybot --account you.testnet --stake 3
@@ -398,7 +400,7 @@ Terms: [GLOSSARY.md](GLOSSARY.md) · Decisions: [docs/adr](docs/adr) · Agent no
 | Command | Does |
 | --- | --- |
 | `pnpm demo` | Whole story on a fresh sandbox, PASS/FAIL per claim |
-| `pnpm test` | 8 scenarios (vitest) against a fresh sandbox |
+| `pnpm test` | 9 scenarios (vitest) against a fresh sandbox |
 | `pnpm typecheck` | TypeScript across the workspace |
 | `pnpm evergreen sandbox --story` | Long-running local chain with alice/bob |
 | `pnpm evergreen keeper run` | Pokes Stewards when Rent is due |
