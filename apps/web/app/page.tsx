@@ -5,6 +5,7 @@ import { Lapse } from "./components/Lapse";
 import { LiveProvider } from "./components/LiveData";
 import { LiveNames } from "./components/LiveNames";
 import { Parallax, SmoothScroll } from "./components/Motion";
+import { UseIt } from "./components/UseIt";
 
 const REPO = "https://github.com/SachPlayZ/Evergreen";
 
@@ -30,6 +31,7 @@ export default function Home() {
           <a href="#how">How it works</a>
           <a href="#mainnet">Mainnet</a>
           <a href="#cost">Cost</a>
+          <a href="#use">Use it</a>
           <a href={REPO}>GitHub</a>
         </div>
       </nav>
@@ -41,6 +43,7 @@ export default function Home() {
         <HowScroll />
         <Lapse />
         <Cost />
+        <UseIt />
       </main>
 
       <footer className="foot">

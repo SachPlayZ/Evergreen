@@ -17,8 +17,16 @@
  *   evergreen exit <name> --as <patron>
  *   evergreen testnet deploy --account <you.testnet> [--rpc <url>]
  *                                       deploy the stack and the live scene to testnet (resumes if it stops)
- *   evergreen testnet adopt <label>.hosdemo.testnet --account <you.testnet> [--stake 3] [--pool <pool>]
- *                                       make a Name on House of Stake's own testnet registry Evergreen, staked in a real pool
+ *
+ * Your own Evergreen Name on NEAR testnet (signs with ~/.near-credentials/testnet/<you.testnet>.json):
+ *   evergreen testnet rent <label> --account <you.testnet>   rent <label>.ev.sachindraz.testnet (open to anyone)
+ *   evergreen testnet adopt <label> --account <you.testnet> [--stake 3] [--pool <pool>]
+ *                                       make it Evergreen (rents it first if it is free)
+ *   evergreen testnet status <name>
+ *   evergreen testnet poke <name> --account <you.testnet>
+ *   evergreen testnet tip <name> <near> --account <you.testnet>
+ *   evergreen testnet exit <name> --account <you.testnet>     take the Name back, stake and all
+ *   (a full <label>.hosdemo.testnet name uses House of Stake's own testnet registry instead)
  *
  * Commands talk to the sandbox started by `evergreen sandbox`. With EVERGREEN_NETWORK=testnet
  * they talk to the testnet copy in deploy/testnet.json instead, and every signer is its account.
@@ -92,8 +100,18 @@ async function main(): Promise<void> {
     process.exit(0); // nothing left to wait for; don't let a stray handle keep a judge's terminal open
   }
 
+  if (command === "testnet" && rest[0] === "rent") {
+    await rentOnTestnet(rest[1], flags);
+    return;
+  }
+
   if (command === "testnet" && rest[0] === "adopt") {
     await adoptOnTestnet(rest[1], flags);
+    return;
+  }
+
+  if (command === "testnet" && ["status", "poke", "tip", "exit"].includes(rest[0])) {
+    await yourTestnetName(rest[0], rest[1], rest[2], flags);
     return;
   }
 
@@ -310,25 +328,42 @@ async function main(): Promise<void> {
  */
 async function testnetKeeper(client: Evergreen, env: Env): Promise<never> {
   const root = client.account(env.root!, testnetKey(env.root!));
-  console.log(`Testnet keeper for ${Object.keys(env.stewards).join(", ")}. Checks every 5 minutes. Ctrl+C stops it.`);
+  console.log(`Testnet keeper for every Evergreen Name in ${env.namespace}. Checks every 5 minutes. Ctrl+C stops it.`);
   let epoch = "";
   for (;;) {
     await refreshRate(client, root, env.registryId).catch((error) => console.log(`rate: ${error.message}`));
+    // Anyone can adopt a Name in our open namespace; find every one whose Owner is its Steward.
+    const stewards: Record<string, string> = { ...env.stewards };
+    const pools = new Set([env.poolId]);
+    try {
+      for (const lease of await client.listNames(env.namespace)) {
+        const s = lease.name in stewards ? undefined : await client.stewardOf(lease);
+        if (s) {
+          stewards[lease.name] = lease.owner;
+          pools.add(s.pool);
+        }
+      }
+    } catch (error: any) {
+      console.log(`discover: ${error.message}`);
+    }
     // A pool credits last epoch's rewards only when someone pings it; do it once per epoch.
     try {
       const now = (await client.rpc.viewBlock({ finality: "final" })).header.epoch_id;
       if (now !== epoch) {
-        await call(root, env.poolId, "ping", {}, { gas: 100n * 10n ** 12n });
+        for (const pool of pools) {
+          await call(root, pool, "ping", {}, { gas: 100n * 10n ** 12n }).catch((error) => console.log(`ping ${pool}: ${error.message}`));
+        }
         epoch = now;
-        console.log(`pinged ${env.poolId} (new epoch)`);
+        console.log(`pinged ${[...pools].join(", ")} (new epoch)`);
       }
     } catch (error: any) {
       console.log(`ping: ${error.message}`);
     }
-    for (const [name, stewardId] of Object.entries(env.stewards)) {
+    for (const [name, stewardId] of Object.entries(stewards)) {
       try {
         const s = await client.getSteward(stewardId);
-        const due = s.phase !== "Idle" || s.rewardsYocto >= s.needYocto || s.lease.secondsLeft <= Number(s.lapseGuardNs / 1_000_000_000n) + 3600;
+        const inWindow = s.lease.secondsLeft <= Number(s.windowNs / 1_000_000_000n);
+        const due = s.phase !== "Idle" || (inWindow && s.rewardsYocto >= s.needYocto) || s.lease.secondsLeft <= Number(s.lapseGuardNs / 1_000_000_000n) + 3600;
         if (typeof s.phase === "object" && "Evacuated" in s.phase) continue;
         const result = due ? await client.poke(root, stewardId) : "not_due";
         console.log(`${name}: ${result}; rewards ${yoctoToNear(s.rewardsYocto, 6)} of ${yoctoToNear(s.needYocto, 6)} NEAR needed`);
@@ -340,64 +375,102 @@ async function testnetKeeper(client: Evergreen, env: Env): Promise<never> {
   }
 }
 
-/**
- * Makes one Name on House of Stake's own testnet registry Evergreen: only the Steward is ours.
- * Rents the Name if it is free, then adopts it into a real testnet staking pool. Run it again to see its status.
- * Real settings: one-year Lease, 30-day renewal window, 3-day lapse guard (the pool's unstake delay is ~2 days).
- */
-async function adoptOnTestnet(name: string | undefined, flags: Record<string, string>): Promise<void> {
-  if (!name || !flags.account) {
-    throw new Error("Usage: evergreen testnet adopt <label>.hosdemo.testnet --account <you.testnet> [--stake 3] [--pool <pool>]");
-  }
-  const registryId = flags.registry ?? "registry.hosdemo.testnet";
-  const pool = flags.pool ?? "aurora.pool.f863973.m0";
+/** Where a testnet Name lives: a bare label means <label>.ev.sachindraz.testnet, our open namespace. */
+function testnetTarget(nameArg: string | undefined, flags: Record<string, string>) {
+  if (!nameArg) throw new Error("Say which Name, e.g. `evergreen testnet adopt mybot --account you.testnet`");
+  const ours: { registryId: string; namespace: string } = JSON.parse(readFileSync(TESTNET_FILE, "utf8"));
+  const name = nameArg.includes(".") ? nameArg : `${nameArg}.${ours.namespace}`;
+  const registryId = flags.registry ?? (name.endsWith(".hosdemo.testnet") ? "registry.hosdemo.testnet" : ours.registryId);
   const client = new Evergreen({ rpcUrl: flags.rpc || TESTNET_RPC, registryId });
-  const patron = client.account(flags.account, testnetKey(flags.account));
-  const stewardId = stewardIdFor(name, flags.account);
-  const explorer = (id: string) => `https://testnet.nearblocks.io/address/${id}`;
+  return { name, registryId, client };
+}
 
+const explorer = (id: string) => `https://testnet.nearblocks.io/address/${id}`;
+
+/** Rent a free testnet Name for --account. Needs the registry's NEAR/USD rate to be fresh. */
+async function rentOnTestnet(nameArg: string | undefined, flags: Record<string, string>): Promise<void> {
+  if (!flags.account) throw new Error("Usage: evergreen testnet rent <label> --account <you.testnet>");
+  const { name, registryId, client } = testnetTarget(nameArg, flags);
   const lease = await client.getLease(name);
-  if (lease?.owner === stewardId) {
-    const s = await client.getSteward(stewardId);
-    console.log(`${name} is Evergreen. Steward ${stewardId}, pool ${s.pool}.`);
-    console.log(`Staked ${yoctoToNear(s.stakedYocto)} NEAR (principal ${yoctoToNear(s.principalYocto)}), rewards ${yoctoToNear(s.rewardsYocto)}.`);
-    console.log(`Lease ${lease.status}, ${Math.round(lease.secondsLeft / 86_400)} days left; ${s.renewals.length} self-renewals. ${explorer(stewardId)}`);
-    return;
+  if (lease) {
+    if (lease.owner === flags.account) return void console.log(`${name} is already yours (${lease.status}, ${Math.round(lease.secondsLeft / 86_400)} days left).`);
+    throw new Error(`${name} is owned by ${lease.owner}. Pick a free label.`);
   }
-  if (lease && lease.owner !== flags.account) throw new Error(`${name} is owned by ${lease.owner}. Pick a free label.`);
-
-  // Rent and renewal both need the registry's NEAR/USD rate to be fresh, and only its oracle can refresh it.
   const [meta, fee, oracle] = await Promise.all([
     client.rpc.callFunction({ contractId: registryId, method: "get_rate_meta", args: {} }) as Promise<{ updated_at: string }>,
     client.rpc.callFunction({ contractId: registryId, method: "get_fee_config", args: {} }) as Promise<{ max_rate_age_ns: string }>,
     client.rpc.callFunction({ contractId: registryId, method: "get_price_oracle", args: {} }) as Promise<string>,
   ]);
-  const ageNs = (await client.chainTimeNs()) - BigInt(meta.updated_at);
-  if (!lease && ageNs > BigInt(fee.max_rate_age_ns)) {
+  if ((await client.chainTimeNs()) - BigInt(meta.updated_at) > BigInt(fee.max_rate_age_ns)) {
     const since = new Date(Number(BigInt(meta.updated_at) / 1_000_000n)).toISOString().slice(0, 16).replace("T", " ");
     throw new Error(
       `${registryId} has no fresh NEAR/USD rate (last set ${since} UTC), so it cannot rent ${name}. ` +
         `Its oracle ${oracle} must call set_near_usd_rate first. Nothing was spent.`,
     );
   }
+  const price = await client.getPrice(name);
+  console.log(`Renting ${name} for ${flags.account}: ${near(price.totalToRentYocto)} up front (Rent ${near(price.rentYocto)} a year)...`);
+  const patron = client.account(flags.account, testnetKey(flags.account));
+  await client.rent(patron, name);
+  const now = await client.getLease(name);
+  console.log(`${name} is yours: an NFT and a real account, Lease ends in ${Math.round(now!.secondsLeft / 86_400)} days. ${explorer(name)}`);
+}
 
-  if (!lease) {
-    console.log(`Renting ${name} for ${flags.account}...`);
-    await client.rent(patron, name);
-  }
-  const stake = nearToYocto(flags.stake ?? "3");
+/**
+ * Makes your testnet Name Evergreen: rents it if it is free, then hands it to a new Steward that stakes it in a
+ * real pool. Run it again to see its status.
+ * Real settings: one-year Lease, 30-day renewal window, 3-day lapse guard (the pool's unstake delay is ~2 days).
+ */
+async function adoptOnTestnet(nameArg: string | undefined, flags: Record<string, string>): Promise<void> {
+  if (!flags.account) throw new Error("Usage: evergreen testnet adopt <label> --account <you.testnet> [--stake 3] [--pool <pool>]");
+  const { name, client } = testnetTarget(nameArg, flags);
+  const stewardId = stewardIdFor(name, flags.account);
+  const lease = await client.getLease(name);
+  if (lease?.owner === stewardId) return yourTestnetName("status", name, undefined, flags);
+  if (!lease || lease.owner !== flags.account) await rentOnTestnet(name, flags);
+
+  const pool = flags.pool ?? "aurora.pool.f863973.m0";
   console.log(`Adopting ${name}: Steward ${stewardId}, staking ${flags.stake ?? "3"} NEAR in ${pool}...`);
-  await client.adopt(patron, name, {
+  await client.adopt(client.account(flags.account, testnetKey(flags.account)), name, {
     pool,
-    stakeYocto: stake,
+    stakeYocto: nearToYocto(flags.stake ?? "3"),
     stewardWasm: wasm("steward"),
     stewardBalanceYocto: nearToYocto("2"),
     windowSecs: 30 * 86_400,
     lapseGuardSecs: 3 * 86_400,
   });
-  console.log(`${name} is Evergreen on House of Stake's testnet registry.`);
+  console.log(`${name} is Evergreen. It now pays its own Rent from staking rewards.`);
   console.log(`  Steward: ${explorer(stewardId)}`);
   console.log(`  Name:    ${explorer(name)}`);
+  console.log("Anyone can poke it; the hosted keeper pokes every Evergreen Name in ev.sachindraz.testnet for you.");
+}
+
+/** status / poke / tip / exit for a testnet Name whose Owner is its Steward. */
+async function yourTestnetName(action: string, nameArg: string | undefined, amount: string | undefined, flags: Record<string, string>): Promise<void> {
+  const { name, client } = testnetTarget(nameArg, flags);
+  const lease = await client.getLease(name);
+  if (!lease) throw new Error(`${name} is not rented. Rent it: evergreen testnet rent ${name} --account <you.testnet>`);
+  const s = await client.stewardOf(lease);
+  if (!s) throw new Error(`${name} is not Evergreen (owner ${lease.owner}). Adopt it: evergreen testnet adopt ${name} --account <you.testnet>`);
+  const stewardId = lease.owner;
+  if (action !== "status") {
+    if (!flags.account) throw new Error(`Say who signs: evergreen testnet ${action} ${name}${amount ? ` ${amount}` : ""} --account <you.testnet>`);
+    const signer = client.account(flags.account, testnetKey(flags.account));
+    if (action === "poke") console.log(`poke: ${await client.poke(signer, stewardId)}`);
+    if (action === "tip") {
+      if (!amount) throw new Error(`Usage: evergreen testnet tip ${name} <near> --account <you.testnet>`);
+      await client.tip(signer, stewardId, nearToYocto(amount));
+      console.log(`Tipped ${amount} NEAR into ${name}'s Stake.`);
+    }
+    if (action === "exit") {
+      await client.exit(signer, stewardId);
+      return void console.log(`${name} is back with ${s.patron}. Its Stake stays on the Name.`);
+    }
+  }
+  const phase = typeof s.phase === "string" ? s.phase : JSON.stringify(s.phase);
+  console.log(`${name} is Evergreen. Steward ${stewardId}, Patron ${s.patron}, pool ${s.pool}, phase ${phase}.`);
+  console.log(`Staked ${near(s.stakedYocto)} (principal ${near(s.principalYocto)}), rewards ${yoctoToNear(s.rewardsYocto, 6)} of ${yoctoToNear(s.needYocto, 6)} NEAR needed for the next Rent.`);
+  console.log(`Lease ${lease.status}, ${Math.round(lease.secondsLeft / 86_400)} days left; renewed itself ${s.renewals.length} times. ${explorer(stewardId)}`);
 }
 
 main().catch((error) => {

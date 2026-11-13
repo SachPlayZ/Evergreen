@@ -17,6 +17,7 @@
   <a href="https://evergreen-names.vercel.app"><b>Live demo</b></a> ·
   <a href="#verify-it-in-3-commands"><b>Verify in 3 commands</b></a> ·
   <a href="#every-claim-and-where-it-is-proven"><b>Claims → proofs</b></a> ·
+  <a href="#use-it-make-your-own-name-evergreen-near-testnet"><b>Use it on testnet</b></a> ·
   <a href="#architecture"><b>Architecture</b></a> ·
   <a href="#disclosures"><b>Disclosures</b></a>
 </p>
@@ -138,6 +139,76 @@ pnpm evergreen sandbox --story   # terminal 1: local chain + the alice/bob story
 pnpm evergreen keeper run        # terminal 2: pokes alice when Rent is due
 pnpm dev:web                     # terminal 3: http://localhost:3000
 ```
+
+## Use it: make your own Name Evergreen (NEAR testnet)
+
+Anyone can do this today, in about 5 minutes, with free testnet NEAR. You get a real Name on our testnet registry (House of Stake's contracts, unmodified, in the open namespace `ev.sachindraz.testnet`), and a Steward of your own that stakes it with a real validator.
+
+```mermaid
+flowchart LR
+    A["0 · Get a testnet account<br/>faucet: 10 NEAR"] --> B["1 · Rent a Name<br/>mybot.ev.sachindraz.testnet<br/>0.01 NEAR"]
+    B --> C["2 · Adopt it<br/>your Steward + 3 NEAR staked"]
+    C --> D["Keeper pokes it<br/>(anyone can)"]
+    D --> E["Rewards pay Rent<br/>Lease + 1 year"]
+    E --> D
+    C -. "exit() any time" .-> F["Name back to you,<br/>Stake on it"]
+```
+
+**0. Get a testnet account** (free, funded with 10 NEAR by NEAR's faucet; the key is saved where Evergreen looks for it):
+
+```bash
+npx near-cli-rs account create-account sponsor-by-faucet-service you.testnet \
+  autogenerate-new-keypair save-to-legacy-keychain network-config testnet create
+```
+
+Already have one? Evergreen signs with `~/.near-credentials/testnet/you.testnet.json` (or set `EVERGREEN_KEY_FILE`).
+
+**1. Get a Name.** It is an NFT and a real account, leased for one year:
+
+```bash
+git clone https://github.com/SachPlayZ/Evergreen && cd Evergreen && pnpm install
+pnpm evergreen testnet rent mybot --account you.testnet
+# mybot.ev.sachindraz.testnet is yours: an NFT and a real account, Lease ends in 365 days.
+```
+
+**2. Make it Evergreen.** Four transactions you sign: create your Steward, hand it the Name, fund the Name, stake. About 5.5 NEAR: 3 staked (your principal, never spent), ~2 for the Steward contract's storage, 0.5 left liquid on the Name.
+
+```bash
+pnpm evergreen testnet adopt mybot --account you.testnet --stake 3
+# mybot.ev.sachindraz.testnet is Evergreen. It now pays its own Rent from staking rewards.
+#   Steward: https://testnet.nearblocks.io/address/ev-mybot-ev-sachindraz-testnet.you.testnet
+```
+
+**3. Leave it.** The hosted keeper finds every Evergreen Name in `ev.sachindraz.testnet` and pokes it when Rent is due (30 days before expiry). You never have to; anyone can.
+
+| You want to | Run |
+| --- | --- |
+| See its Stake, rewards, phase, days left | `pnpm evergreen testnet status mybot` |
+| Push it one step yourself | `pnpm evergreen testnet poke mybot --account you.testnet` |
+| Add to its Stake (a Lifeline; anyone can) | `pnpm evergreen testnet tip mybot 1 --account you.testnet` |
+| Take the Name back, Stake and all | `pnpm evergreen testnet exit mybot --account you.testnet` |
+
+**Tested with a brand-new faucet account on 14 Nov 2026:** [`hello.ev.sachindraz.testnet`](https://testnet.nearblocks.io/address/hello.ev.sachindraz.testnet), Steward [`ev-hello-ev-sachindraz-testnet.evergreen-try-06844.testnet`](https://testnet.nearblocks.io/address/ev-hello-ev-sachindraz-testnet.evergreen-try-06844.testnet), 3 NEAR staked with `aurora.pool.f863973.m0`.
+
+<details>
+<summary>From code instead of the CLI (TypeScript)</summary>
+
+```ts
+import { Evergreen, nearToYocto } from "@evergreen-names/client";
+import { wasm } from "@evergreen-names/sandbox";
+
+const client = new Evergreen({ rpcUrl: "https://test.rpc.fastnear.com", registryId: "registry.sachindraz.testnet" });
+const me = client.account("you.testnet", "ed25519:...");          // your key
+await client.rent(me, "mybot.ev.sachindraz.testnet");
+const steward = await client.adopt(me, "mybot.ev.sachindraz.testnet", {
+  pool: "aurora.pool.f863973.m0", stakeYocto: nearToYocto(3), stewardWasm: wasm("steward"), stewardBalanceYocto: nearToYocto(2),
+  windowSecs: 30 * 86_400, lapseGuardSecs: 3 * 86_400,
+});
+await client.poke(me, steward);                                   // anyone, any time
+```
+</details>
+
+**On mainnet?** Not yet, on purpose: the Steward is new and unaudited. Nothing in it is testnet-specific (the client takes any registry, and `registry.hos` runs the same contracts), so after an audit the same `adopt` works on a mainnet Name. House of Stake's own testnet registry works too (`--registry registry.hosdemo.testnet`, full name `x.hosdemo.testnet`) once its price oracle is updating again.
 
 ## The problem
 

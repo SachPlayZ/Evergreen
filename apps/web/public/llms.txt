@@ -15,6 +15,23 @@ pnpm demo    # whole story, PASS/FAIL per claim, exits non-zero on any FAIL, ~2.
 
 Look for: "alice.demo renewed itself 2 times with no payment from ana", "principal untouched", "bob.demo is Reclaimable: anyone can take it".
 
+## Use it on your own Name (NEAR testnet, free)
+
+```bash
+# 0. a testnet account, funded by NEAR's faucet (key saved to ~/.near-credentials/testnet/you.testnet.json)
+npx near-cli-rs account create-account sponsor-by-faucet-service you.testnet autogenerate-new-keypair save-to-legacy-keychain network-config testnet create
+# 1. rent mybot.ev.sachindraz.testnet (open namespace, 0.01 NEAR, one-year Lease)
+pnpm evergreen testnet rent mybot --account you.testnet
+# 2. make it Evergreen: your own Steward, 3 NEAR staked with a real validator (~5.5 NEAR total)
+pnpm evergreen testnet adopt mybot --account you.testnet --stake 3
+# 3. the hosted keeper pokes it when Rent is due; check, top up, or take it back any time
+pnpm evergreen testnet status mybot
+pnpm evergreen testnet tip mybot 1 --account you.testnet
+pnpm evergreen testnet exit mybot --account you.testnet
+```
+
+Tested from a brand-new faucet account: hello.ev.sachindraz.testnet. Not on mainnet yet: the Steward is unaudited.
+
 ## Live data (JSON, no JavaScript needed)
 
 - [/api/demo](https://evergreen-names.vercel.app/api/demo): the hosted demo chain. alice.demo (Evergreen) and bob.demo (no Steward), 60-second Leases (demo-only; real Leases are 1 year).
