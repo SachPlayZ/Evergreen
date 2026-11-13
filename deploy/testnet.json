@@ -1,0 +1,27 @@
+{
+  "network": "testnet",
+  "rpcUrl": "https://test.rpc.fastnear.com",
+  "root": "sachindraz.testnet",
+  "registryId": "registry.sachindraz.testnet",
+  "namespace": "ev.sachindraz.testnet",
+  "poolId": "aurora.pool.f863973.m0",
+  "termSecs": 31536000,
+  "stewards": {
+    "evergreen.ev.sachindraz.testnet": "ev-evergreen-ev-sachindraz-testnet.sachindraz.testnet"
+  },
+  "done": [
+    "account registry.sachindraz.testnet",
+    "account ext.sachindraz.testnet",
+    "account ev.sachindraz.testnet",
+    "account rec.sachindraz.testnet",
+    "registry",
+    "extension",
+    "recovery",
+    "registrar",
+    "rate",
+    "fees",
+    "namespace",
+    "rent evergreen.ev.sachindraz.testnet",
+    "adopt evergreen.ev.sachindraz.testnet"
+  ]
+}

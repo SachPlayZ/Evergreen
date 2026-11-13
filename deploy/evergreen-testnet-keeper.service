@@ -1,0 +1,18 @@
+# Testnet keeper for the real Evergreen Name in deploy/testnet.json: keeps the registry's NEAR/USD
+# rate fresh (its account is the oracle) and pokes the Steward when rewards cover Rent.
+# Signs with ~/.near-credentials/testnet/<root>.json on the VM.
+[Unit]
+Description=Evergreen testnet keeper
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/evergreen
+Environment=EVERGREEN_NETWORK=testnet
+ExecStart=/usr/bin/env pnpm --silent evergreen keeper run
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
