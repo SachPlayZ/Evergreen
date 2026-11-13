@@ -23,5 +23,6 @@
     "namespace",
     "rent evergreen.ev.sachindraz.testnet",
     "adopt evergreen.ev.sachindraz.testnet"
-  ]
+  ],
+  "stewardCode": "evergreen-steward.testnet"
 }

@@ -3,10 +3,12 @@
  * Talks to the unmodified Top Level Accounts registry (houseofstake/tla-contracts
  * @ d85860a), a staking pool and Steward contracts.
  */
-import { Account, JsonRpcProvider, actions } from "near-api-js";
+import { Account, JsonRpcProvider } from "near-api-js";
 import { ONE_YOCTO, TGAS, call, nearToYocto, provider, view } from "./near";
+import { adoptTxs, sendTxs, stewardIdFor, type StewardCode } from "./txs";
 
 export * from "./near";
+export * from "./txs";
 
 export interface EvergreenConfig {
   rpcUrl: string;
@@ -112,14 +114,16 @@ export interface StewardStatus {
 export interface AdoptOptions {
   pool: string;
   stakeYocto: bigint;
-  stewardWasm: Uint8Array;
+  /** The Steward's code: its wasm (deployed per Steward), or `stewardCode` for a published global contract. */
+  stewardWasm?: Uint8Array;
+  stewardCode?: StewardCode;
   /** Renewal starts this long before expiry. */
   windowSecs: number;
   /** If Rent is still uncovered this long before expiry, the Stake is pulled back to the Name. */
   lapseGuardSecs: number;
   /** Plain NEAR left on the Name so its wallet can act. Default 0.5 NEAR. */
   liquidBufferYocto?: bigint;
-  /** NEAR given to the Steward account for storage. Default 3 NEAR. */
+  /** NEAR given to the Steward account for storage. Default 3 NEAR with wasm, 0.3 with global code. */
   stewardBalanceYocto?: bigint;
 }
 
@@ -132,11 +136,6 @@ export function splitName(name: string): { label: string; namespace: string } {
   return { label: name.slice(0, dot), namespace: name.slice(dot + 1) };
 }
 
-/** The Steward account for a Name: a keyless sub-account of its Patron. */
-export function stewardIdFor(name: string, patronId: string): string {
-  const { label, namespace } = splitName(name);
-  return `ev-${label}-${namespace.replace(/\./g, "-")}.${patronId}`;
-}
 
 export class Evergreen {
   readonly rpc: JsonRpcProvider;
@@ -313,43 +312,22 @@ export class Evergreen {
    * The Name is funded only after the hand-over, because a transfer sweeps its NEAR.
    */
   async adopt(patron: Account, name: string, options: AdoptOptions): Promise<string> {
-    const { label, namespace } = splitName(name);
-    const stewardId = stewardIdFor(name, patron.accountId);
-    const buffer = options.liquidBufferYocto ?? nearToYocto("0.5");
-
-    await patron.signAndSendTransaction({
-      receiverId: stewardId,
-      waitUntil: "FINAL",
-      actions: [
-        actions.createAccount(),
-        actions.transfer(options.stewardBalanceYocto ?? nearToYocto(3)),
-        actions.deployContract(options.stewardWasm),
-        actions.functionCall(
-          "new",
-          {
-            registry: this.registryId,
-            tla_id: namespace,
-            label,
-            pool: options.pool,
-            patron: patron.accountId,
-            window_ns: (BigInt(options.windowSecs) * NS).toString(),
-            lapse_guard_ns: (BigInt(options.lapseGuardSecs) * NS).toString(),
-          },
-          30n * TGAS,
-          0n,
-        ),
-      ],
+    const code = options.stewardCode ?? (options.stewardWasm && { wasm: options.stewardWasm });
+    if (!code) throw new Error("adopt needs stewardWasm or stewardCode");
+    const txs = adoptTxs({
+      registryId: this.registryId,
+      name,
+      patron: patron.accountId,
+      pool: options.pool,
+      stakeYocto: options.stakeYocto,
+      windowSecs: options.windowSecs,
+      lapseGuardSecs: options.lapseGuardSecs,
+      code,
+      stewardBalanceYocto: options.stewardBalanceYocto ?? ("wasm" in code ? nearToYocto(3) : undefined),
+      liquidBufferYocto: options.liquidBufferYocto,
     });
-    await call(
-      patron,
-      this.registryId,
-      "transfer_sub_account",
-      { tla_id: namespace, name: label, new_owner: stewardId },
-      { deposit: ONE_YOCTO },
-    );
-    await patron.transfer({ receiverId: name, amount: options.stakeYocto + buffer });
-    await call(patron, stewardId, "stake", { amount: options.stakeYocto.toString() });
-    return stewardId;
+    await sendTxs(patron, txs);
+    return stewardIdFor(name, patron.accountId);
   }
 
   /** Anyone can poke a Steward. Returns the step it took, e.g. `not_due`, `unstaking`, `renewed`. */

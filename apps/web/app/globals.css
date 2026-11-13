@@ -274,6 +274,18 @@ main > section {
 .nav-links a:hover {
   color: var(--text);
 }
+.nav-links a.nav-cta {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.use-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin: 24px 0 32px;
+}
 
 /* ---- hero ---- */
 .hero {
@@ -988,7 +1000,7 @@ a.hero-card:hover {
 }
 
 @media (max-width: 900px) {
-  .nav-links a:not(:first-child) {
+  .nav-links a:not(.nav-cta) {
     display: none;
   }
   .hero {

@@ -64,7 +64,7 @@ Needs **Node 22+** and **pnpm**. Everything runs on a local NEAR sandbox (a real
 
 ```bash
 pnpm install
-pnpm test    # ~2.5 min · 7 scenarios through the TypeScript client against a local NEAR chain
+pnpm test    # ~3 min · 8 scenarios through the TypeScript client against a local NEAR chain
 pnpm demo    # ~2.5 min · the whole story end to end · PASS/FAIL per claim · exits non-zero on any FAIL
 ```
 
@@ -85,7 +85,7 @@ pnpm demo    # ~2.5 min · the whole story end to end · PASS/FAIL per claim · 
    PASS  alice.demo is back with ana; a Name is never locked in
 ```
 
-Seconds left and the staked total vary slightly run to run. **Expected `pnpm test`:** `Test Files 3 passed (3)`, `Tests 7 passed (7)`.
+Seconds left and the staked total vary slightly run to run. **Expected `pnpm test`:** `Test Files 3 passed (3)`, `Tests 8 passed (8)`.
 
 CI runs the same commands on every push, plus `pnpm typecheck`, a SHA-256 check of every prebuilt contract, and a production build of the page: [ci.yml](.github/workflows/ci.yml).
 
@@ -97,7 +97,7 @@ CI runs the same commands on every push, plus `pnpm typecheck`, a SHA-256 check 
 | 2 | Anyone can trigger a renewal (`poke`); no trusted keeper | [`contracts/steward/src/lib.rs`](contracts/steward/src/lib.rs) `poke()` has no caller check · the demo keeper is an unrelated account |
 | 3 | If rewards can't cover Rent, the whole Stake leaves the pool *before* expiry; a Lifeline revives it | test *"if Rent cannot be covered, the Stake is pulled out of the pool before expiry; a Lifeline revives it"* |
 | 4 | Without Evergreen, a lapsed Name goes to whoever reclaims it, **and so does any stake behind it** | test *"a staked Name that lapses hands its stake to the next renter"* in [lease.test.ts](packages/client/test/lease.test.ts) · `pnpm demo` step 6 (`bob.demo`) |
-| 5 | The owner can take the Name back at any time | `pnpm demo` step 7 · `exit()` in [lib.rs](contracts/steward/src/lib.rs) |
+| 5 | The owner can take the Name back at any time, with its NEAR and its Stake | `pnpm demo` step 7 · test *"a Name made Evergreen from the published Steward code can be taken back, Stake and all, into the Patron's hands"* · `exit()` in [lib.rs](contracts/steward/src/lib.rs) |
 | 6 | Registry, wallet, registrar, extension, recovery are House of Stake's contracts, **unmodified** | [`contracts/upstream`](contracts/upstream) submodule pinned at `d85860a` · wasm checked against [`SHA256SUMS`](contracts/wasm/SHA256SUMS) in CI · rebuild: `pnpm build:contracts` (Rust + cargo-near) |
 | 7 | Works on House of Stake's *testnet* contract version, with a real one-year Lease | test *"on House of Stake's testnet contracts, an Evergreen Name renews its one-year Lease from …"* in [testnet-stack.test.ts](packages/client/test/testnet-stack.test.ts) · live on testnet (below) |
 | 8 | 80 Names are rented on NEAR mainnet today, each one expiring | `curl -s https://evergreen-names.vercel.app/api/mainnet` (reads `registry.hos` live) |
@@ -142,7 +142,19 @@ pnpm dev:web                     # terminal 3: http://localhost:3000
 
 ## Use it: make your own Name Evergreen (NEAR testnet)
 
-Anyone can do this today, in about 5 minutes, with free testnet NEAR. You get a real Name on our testnet registry (House of Stake's contracts, unmodified, in the open namespace `ev.sachindraz.testnet`), and a Steward of your own that stakes it with a real validator.
+Anyone can do this today with free testnet NEAR. You get a real Name on a House of Stake registry (their contracts, unmodified, in the open namespace `ev.sachindraz.testnet`), and a Steward of your own that stakes it with a real validator. **Evergreen is not the rental service**: Names are leased from House of Stake's Top Level Accounts registry; Evergreen only adds the Steward.
+
+### In your browser: [evergreen-names.vercel.app/app](https://evergreen-names.vercel.app/app)
+
+Connect a testnet wallet (Meteor, Intear, Nightly, Ledger, or NEAR CLI via NEAR Connect), then:
+
+1. **Rent a Name**: type a label, see if it's free and what it costs, approve one transaction.
+2. **Make it Evergreen**: pick a stake, see the yearly rewards vs Rent estimate, approve four transactions in one go.
+3. **Manage it**: add to the Stake, poke, take it back, pay Rent by hand, transfer the Name, withdraw NEAR from the Name, and after taking it back unstake and withdraw from the pool, or hand it back to its Steward.
+
+Look at any account read-only, no wallet needed: [`/app?account=evergreen-try-06844.testnet`](https://evergreen-names.vercel.app/app?account=evergreen-try-06844.testnet). Agents: [`/agents.md`](https://evergreen-names.vercel.app/agents.md) (method reference + rules), [`/api/names?owner=you.testnet`](https://evergreen-names.vercel.app/api/names?owner=evergreen-try-06844.testnet) (state as JSON), and a copyable agent prompt on the app page.
+
+### From the terminal
 
 ```mermaid
 flowchart LR
@@ -171,7 +183,7 @@ pnpm evergreen testnet rent mybot --account you.testnet
 # mybot.ev.sachindraz.testnet is yours: an NFT and a real account, Lease ends in 365 days.
 ```
 
-**2. Make it Evergreen.** Four transactions you sign: create your Steward, hand it the Name, fund the Name, stake. About 5.5 NEAR: 3 staked (your principal, never spent), ~2 for the Steward contract's storage, 0.5 left liquid on the Name.
+**2. Make it Evergreen.** Four transactions you sign: create your Steward, hand it the Name, fund the Name, stake. About 3.8 NEAR: 3 staked (your principal, never spent), 0.3 for the Steward account (its code is the published global contract `evergreen-steward.testnet`, so nothing big is deployed), 0.5 left liquid on the Name.
 
 ```bash
 pnpm evergreen testnet adopt mybot --account you.testnet --stake 3
@@ -188,7 +200,7 @@ pnpm evergreen testnet adopt mybot --account you.testnet --stake 3
 | Add to its Stake (a Lifeline; anyone can) | `pnpm evergreen testnet tip mybot 1 --account you.testnet` |
 | Take the Name back, Stake and all | `pnpm evergreen testnet exit mybot --account you.testnet` |
 
-**Tested with a brand-new faucet account on 14 Nov 2026:** [`hello.ev.sachindraz.testnet`](https://testnet.nearblocks.io/address/hello.ev.sachindraz.testnet), Steward [`ev-hello-ev-sachindraz-testnet.evergreen-try-06844.testnet`](https://testnet.nearblocks.io/address/ev-hello-ev-sachindraz-testnet.evergreen-try-06844.testnet), 3 NEAR staked with `aurora.pool.f863973.m0`.
+**Tested with a brand-new faucet account on 14 Nov 2026** (the full lifecycle, rent → adopt → take back → withdraw → hand back, also runs in the sandbox test above): [`hello.ev.sachindraz.testnet`](https://testnet.nearblocks.io/address/hello.ev.sachindraz.testnet), Steward [`ev-hello-ev-sachindraz-testnet.evergreen-try-06844.testnet`](https://testnet.nearblocks.io/address/ev-hello-ev-sachindraz-testnet.evergreen-try-06844.testnet), 3 NEAR staked with `aurora.pool.f863973.m0`.
 
 <details>
 <summary>From code instead of the CLI (TypeScript)</summary>
@@ -363,7 +375,7 @@ Terms: [GLOSSARY.md](GLOSSARY.md) · Decisions: [docs/adr](docs/adr) · Agent no
 | Command | Does |
 | --- | --- |
 | `pnpm demo` | Whole story on a fresh sandbox, PASS/FAIL per claim |
-| `pnpm test` | 7 scenarios (vitest) against a fresh sandbox |
+| `pnpm test` | 8 scenarios (vitest) against a fresh sandbox |
 | `pnpm typecheck` | TypeScript across the workspace |
 | `pnpm evergreen sandbox --story` | Long-running local chain with alice/bob |
 | `pnpm evergreen keeper run` | Pokes Stewards when Rent is due |

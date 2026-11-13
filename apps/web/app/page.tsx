@@ -6,6 +6,7 @@ import { LiveProvider } from "./components/LiveData";
 import { LiveNames } from "./components/LiveNames";
 import { Parallax, SmoothScroll } from "./components/Motion";
 import { UseIt } from "./components/UseIt";
+import Link from "next/link";
 
 const REPO = "https://github.com/SachPlayZ/Evergreen";
 
@@ -32,6 +33,9 @@ export default function Home() {
           <a href="#mainnet">Mainnet</a>
           <a href="#cost">Cost</a>
           <a href="#use">Use it</a>
+          <Link className="nav-cta" href="/app">
+            Open app
+          </Link>
           <a href={REPO}>GitHub</a>
         </div>
       </nav>

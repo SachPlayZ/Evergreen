@@ -74,7 +74,7 @@ export async function call<T = unknown>(
   if (failure) throw new TxError(method, failure);
   const value = outcome?.status?.SuccessValue;
   if (typeof value !== "string" || value === "") return undefined as T;
-  const text = Buffer.from(value, "base64").toString();
+  const text = new TextDecoder().decode(Uint8Array.from(atob(value), (c) => c.charCodeAt(0)));
   try {
     return JSON.parse(text) as T;
   } catch {

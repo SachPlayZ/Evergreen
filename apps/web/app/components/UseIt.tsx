@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Copy } from "@phosphor-icons/react";
+import { ArrowRight, Check, Copy } from "@phosphor-icons/react";
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { Reveal } from "./Motion";
 
@@ -51,7 +52,13 @@ export function UseIt() {
         </h2>
         <p className="section-lede">
           On NEAR testnet, today, with free testnet NEAR. A real Name, a Steward of your own, staked with a real
-          validator. About five minutes.
+          validator.
+        </p>
+        <p className="use-cta">
+          <Link className="btn" href="/app">
+            Open the app <ArrowRight aria-hidden="true" />
+          </Link>
+          <span className="small">Connect a wallet, rent, stake, manage. Or do it all from a terminal:</span>
         </p>
 
         <div className="use-fields">
@@ -85,8 +92,8 @@ export function UseIt() {
           <li>
             <h3>Make it Evergreen</h3>
             <p className="small">
-              You sign four transactions: create your Steward, hand it the Name, fund the Name, stake. About 5.5 NEAR: 3 staked
-              and never spent, ~2 for the Steward&apos;s storage, 0.5 left on the Name.
+              You sign four transactions: create your Steward, hand it the Name, fund the Name, stake. About 3.8 NEAR: 3 staked
+              and never spent, 0.3 for the Steward account, 0.5 left on the Name.
             </p>
             <Cmd text={`pnpm evergreen testnet adopt ${mine} --account ${you} --stake 3`} />
           </li>

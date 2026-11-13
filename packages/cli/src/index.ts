@@ -378,11 +378,11 @@ async function testnetKeeper(client: Evergreen, env: Env): Promise<never> {
 /** Where a testnet Name lives: a bare label means <label>.ev.sachindraz.testnet, our open namespace. */
 function testnetTarget(nameArg: string | undefined, flags: Record<string, string>) {
   if (!nameArg) throw new Error("Say which Name, e.g. `evergreen testnet adopt mybot --account you.testnet`");
-  const ours: { registryId: string; namespace: string } = JSON.parse(readFileSync(TESTNET_FILE, "utf8"));
+  const ours: { registryId: string; namespace: string; stewardCode?: string } = JSON.parse(readFileSync(TESTNET_FILE, "utf8"));
   const name = nameArg.includes(".") ? nameArg : `${nameArg}.${ours.namespace}`;
   const registryId = flags.registry ?? (name.endsWith(".hosdemo.testnet") ? "registry.hosdemo.testnet" : ours.registryId);
   const client = new Evergreen({ rpcUrl: flags.rpc || TESTNET_RPC, registryId });
-  return { name, registryId, client };
+  return { name, registryId, client, stewardCode: registryId === ours.registryId ? ours.stewardCode : undefined };
 }
 
 const explorer = (id: string) => `https://testnet.nearblocks.io/address/${id}`;
@@ -423,7 +423,7 @@ async function rentOnTestnet(nameArg: string | undefined, flags: Record<string, 
  */
 async function adoptOnTestnet(nameArg: string | undefined, flags: Record<string, string>): Promise<void> {
   if (!flags.account) throw new Error("Usage: evergreen testnet adopt <label> --account <you.testnet> [--stake 3] [--pool <pool>]");
-  const { name, client } = testnetTarget(nameArg, flags);
+  const { name, client, stewardCode } = testnetTarget(nameArg, flags);
   const stewardId = stewardIdFor(name, flags.account);
   const lease = await client.getLease(name);
   if (lease?.owner === stewardId) return yourTestnetName("status", name, undefined, flags);
@@ -434,8 +434,8 @@ async function adoptOnTestnet(nameArg: string | undefined, flags: Record<string,
   await client.adopt(client.account(flags.account, testnetKey(flags.account)), name, {
     pool,
     stakeYocto: nearToYocto(flags.stake ?? "3"),
-    stewardWasm: wasm("steward"),
-    stewardBalanceYocto: nearToYocto("2"),
+    // Our testnet publishes the Steward once as a global contract (evergreen-steward.testnet); elsewhere, deploy the wasm.
+    ...(stewardCode ? { stewardCode: { globalAccountId: stewardCode } } : { stewardWasm: wasm("steward"), stewardBalanceYocto: nearToYocto("2") }),
     windowSecs: 30 * 86_400,
     lapseGuardSecs: 3 * 86_400,
   });

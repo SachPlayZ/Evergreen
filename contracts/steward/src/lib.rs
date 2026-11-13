@@ -287,14 +287,25 @@ impl Steward {
     }
 
     /// Patron takes the Name back. Stake in the pool stays with the Name, so it goes with it.
+    /// The transfer sweeps the Name's plain NEAR to its Payout Account, which is this Steward since
+    /// adoption, and a Steward cannot send NEAR on. So, in one atomic receipt, the Patron becomes
+    /// the Payout Account first, then the Owner.
     pub fn exit(&mut self) -> Promise {
         require!(env::predecessor_account_id() == self.patron, "only_patron");
-        Promise::new(self.registry.clone()).function_call(
-            "transfer_sub_account".to_string(),
-            to_vec(json!({ "tla_id": self.tla_id, "name": self.label, "new_owner": self.patron })),
-            ONE_YOCTO,
-            Gas::from_tgas(150),
-        )
+        Promise::new(self.registry.clone())
+            .function_call(
+                "set_payout_account".to_string(),
+                to_vec(json!({ "tla_id": self.tla_id, "name": self.label, "new_payout_account": self.patron })),
+                ONE_YOCTO,
+                // The registry forwards 30 + 10 Tgas to the extension and its callback.
+                Gas::from_tgas(60),
+            )
+            .function_call(
+                "transfer_sub_account".to_string(),
+                to_vec(json!({ "tla_id": self.tla_id, "name": self.label, "new_owner": self.patron })),
+                ONE_YOCTO,
+                Gas::from_tgas(150),
+            )
     }
 
     pub fn get_status(&self) -> StewardView {

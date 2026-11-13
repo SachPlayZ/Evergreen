@@ -1,7 +1,7 @@
 /** Evergreen Names: a Steward owns the Name and keeps it alive. Sandbox, 60-second Leases, DEMO pool. */
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { startSandbox, type EvergreenSandbox } from "@evergreen-names/sandbox";
-import { nearToYocto } from "../src/index";
+import { nearToYocto, sendTxs, unstakeAllTx, withdrawFromPoolTx, withdrawFromNameTx } from "../src/index";
 
 let sb: EvergreenSandbox;
 const NS = 1_000_000_000n;
@@ -9,7 +9,7 @@ const WINDOW = 35;
 const GUARD = 15;
 
 beforeAll(async () => {
-  sb = await startSandbox({ people: ["ana", "fan", "keeper"] });
+  sb = await startSandbox({ people: ["ana", "fan", "keeper", "code"] });
 });
 afterAll(async () => sb?.stop());
 
@@ -107,4 +107,42 @@ test("if Rent cannot be covered, the Stake is pulled out of the pool before expi
   // The Patron can always take the Name back.
   await sb.client.exit(sb.account("ana"), stewardId);
   expect((await sb.client.getLease(name))!.owner).toBe("ana");
+});
+
+test("a Name made Evergreen from the published Steward code can be taken back, Stake and all, into the Patron's hands", async () => {
+  // The Steward's code is published once as a global contract; each new Steward just points at it.
+  await sb.account("code").deployGlobalContract(sb.stewardWasm, "accountId");
+  const ana = sb.account("ana");
+  const name = "keeps.demo";
+  await sb.client.rent(ana, name);
+  const stake = nearToYocto(5);
+  const stewardId = await sb.client.adopt(ana, name, {
+    pool: sb.poolId,
+    stakeYocto: stake,
+    stewardCode: { globalAccountId: "code" },
+    windowSecs: WINDOW,
+    lapseGuardSecs: GUARD,
+  });
+  let s = await sb.client.getSteward(stewardId);
+  expect(s.lease.owner).toBe(stewardId);
+  expect(s.stakedYocto).toBe(stake);
+
+  // Taking it back: the Name and its plain NEAR return to the Patron. Before the fix, the transfer swept that NEAR
+  // to the Steward (the Payout Account since adoption), which cannot send NEAR on.
+  const stewardBefore = await sb.balanceOf(stewardId);
+  const nameBefore = await sb.balanceOf(name);
+  await sb.client.exit(ana, stewardId);
+  expect((await sb.client.getLease(name))!.owner).toBe("ana");
+  expect(await sb.balanceOf(stewardId)).toBeLessThan(stewardBefore + nearToYocto("0.01"));
+  expect(await sb.balanceOf(name)).toBeGreaterThanOrEqual(nameBefore);
+
+  // The Stake is still the Name's, in the pool. The owner unstakes, withdraws, and moves it home through the Name's wallet.
+  await sendTxs(ana, [unstakeAllTx(name, sb.poolId)]);
+  const unstaked = BigInt(await sb.client.rpc.callFunction({ contractId: sb.poolId, method: "get_account_unstaked_balance", args: { account_id: name } }) as string);
+  expect(unstaked).toBeGreaterThanOrEqual(stake);
+  await sendTxs(ana, [withdrawFromPoolTx(name, sb.poolId, unstaked)]);
+  expect(await sb.balanceOf(name)).toBeGreaterThanOrEqual(stake);
+  const anaMid = await sb.balanceOf("ana");
+  await sendTxs(ana, [withdrawFromNameTx(name, "ana", stake)]);
+  expect(await sb.balanceOf("ana")).toBeGreaterThan(anaMid + stake - nearToYocto("0.01"));
 });
