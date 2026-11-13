@@ -551,6 +551,68 @@ a.hero-card:hover {
   margin-bottom: 16px;
 }
 
+/* ---- the real one, on testnet ---- */
+.testnet {
+  display: grid;
+  gap: 8px;
+  margin-top: 120px;
+  max-width: 720px;
+}
+.testnet .small {
+  margin-bottom: 16px;
+}
+.testnet-stats {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+}
+.testnet-stats > div {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr;
+  gap: 4px 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.testnet-stats dt {
+  color: var(--muted);
+}
+.testnet-stats dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.testnet-stats a {
+  color: var(--text);
+  text-decoration-color: var(--line);
+}
+.testnet-stats a svg {
+  vertical-align: -2px;
+  color: var(--leaf);
+}
+.testnet .muted {
+  color: var(--muted);
+}
+.testnet-bar {
+  display: block;
+  height: 3px;
+  margin-top: 8px;
+  max-width: 280px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+.testnet-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--leaf);
+  transition: width 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (max-width: 640px) {
+  .testnet-stats > div {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---- dot willow (cards) ---- */
 .willow {
   display: block;

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { STATUS, near, phaseText, timeLeft, type NameJson } from "@/lib/format";
 import { useLive, useSecondsLeft } from "./LiveData";
 import { Reveal } from "./Motion";
+import { TestnetName } from "./TestnetName";
 import { Willow } from "./Willow";
 
 function Command({ text }: { text: string }) {
@@ -174,6 +175,7 @@ export function LiveNames() {
           )}
         </>
       )}
+      <TestnetName />
     </section>
   );
 }

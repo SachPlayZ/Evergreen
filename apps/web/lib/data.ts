@@ -54,6 +54,36 @@ export async function demoSnapshot() {
   }
 }
 
+/** The real Evergreen Name on testnet (addresses from deploy/testnet.json). Real pool, one-year Lease. */
+export const TESTNET = {
+  rpcUrl: "https://test.rpc.fastnear.com",
+  registryId: "registry.sachindraz.testnet",
+  name: "evergreen.ev.sachindraz.testnet",
+  stewardId: "ev-evergreen-ev-sachindraz-testnet.sachindraz.testnet",
+};
+
+export async function testnetSnapshot() {
+  try {
+    const client = new Evergreen({ rpcUrl: TESTNET.rpcUrl, registryId: TESTNET.registryId });
+    const s = await client.getSteward(TESTNET.stewardId);
+    return toJson({
+      name: TESTNET.name,
+      stewardId: TESTNET.stewardId,
+      pool: s.pool,
+      phase: s.phase,
+      stakedYocto: s.stakedYocto,
+      principalYocto: s.principalYocto,
+      rewardsYocto: s.rewardsYocto,
+      needYocto: s.needYocto,
+      renewals: s.renewals.length,
+      secondsLeft: s.lease.secondsLeft,
+      status: s.lease.status,
+    });
+  } catch (error) {
+    return { error: errorText(error) };
+  }
+}
+
 export async function mainnetSnapshot() {
   const client = new Evergreen(MAINNET);
   const [stats, rate, leases] = await Promise.all([
