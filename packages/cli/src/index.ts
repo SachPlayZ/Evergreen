@@ -311,8 +311,20 @@ async function main(): Promise<void> {
 async function testnetKeeper(client: Evergreen, env: Env): Promise<never> {
   const root = client.account(env.root!, testnetKey(env.root!));
   console.log(`Testnet keeper for ${Object.keys(env.stewards).join(", ")}. Checks every 5 minutes. Ctrl+C stops it.`);
+  let epoch = "";
   for (;;) {
     await refreshRate(client, root, env.registryId).catch((error) => console.log(`rate: ${error.message}`));
+    // A pool credits last epoch's rewards only when someone pings it; do it once per epoch.
+    try {
+      const now = (await client.rpc.viewBlock({ finality: "final" })).header.epoch_id;
+      if (now !== epoch) {
+        await call(root, env.poolId, "ping", {}, { gas: 100n * 10n ** 12n });
+        epoch = now;
+        console.log(`pinged ${env.poolId} (new epoch)`);
+      }
+    } catch (error: any) {
+      console.log(`ping: ${error.message}`);
+    }
     for (const [name, stewardId] of Object.entries(env.stewards)) {
       try {
         const s = await client.getSteward(stewardId);
