@@ -9,12 +9,12 @@
 <p align="center">
   <a href="https://github.com/SachPlayZ/Evergreen/actions/workflows/ci.yml"><img src="https://github.com/SachPlayZ/Evergreen/actions/workflows/ci.yml/badge.svg" alt="ci"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-b6e04a" alt="MIT"></a>
-  <a href="https://evergreen-names.vercel.app"><img src="https://img.shields.io/badge/live-evergreen--names.vercel.app-b6e04a" alt="live demo"></a>
+  <a href="https://evergreennfts.space"><img src="https://img.shields.io/badge/live-evergreen--names.vercel.app-b6e04a" alt="live demo"></a>
   <img src="https://img.shields.io/badge/NEAR%20HACKATHON-NFTs%20That%20Do%20Something-ef5a2f" alt="track">
 </p>
 
 <p align="center">
-  <a href="https://evergreen-names.vercel.app"><b>Live demo</b></a> ·
+  <a href="https://evergreennfts.space"><b>Live demo</b></a> ·
   <a href="#verify-it-in-3-commands"><b>Verify in 3 commands</b></a> ·
   <a href="#every-claim-and-where-it-is-proven"><b>Claims → proofs</b></a> ·
   <a href="#use-it-make-your-own-name-evergreen-near-testnet"><b>Use it on testnet</b></a> ·
@@ -38,9 +38,9 @@ Most NFTs are a pointer to a JPEG. This one is an economic agent. Every NEAR Nam
 | **can't die of neglect** | `poke` is permissionless; no server is trusted | demo step 5; the hosted keeper is just one poker among anyone |
 | **can be kept alive by strangers** | Anyone can send a Lifeline (`tip`) that joins the stake | demo: *"fan's Tip joined the Stake"* |
 | **becomes self-sustaining when you send it to a contract** | `nft_transfer_call` to its Steward; the Steward's NEP-171 `nft_on_transfer` funds the Name and stakes it in the same call. Any other NFT or sender is handed straight back | test *"sending the NFT to its Steward is what makes it Evergreen…"* · `nft_on_transfer` in [lib.rs](contracts/steward/src/lib.rs) |
-| **shows its own health** | A live card: the willow is the share of the Lease left, plus its Stake and renewals | [`/api/nft/evergreen.png`](https://evergreen-names.vercel.app/api/nft/evergreen.png) |
+| **shows its own health, and can be shared** | A live card: the willow is the share of the Lease left, plus its Stake and renewals. Each Name has a share page whose X preview is its card, snapshotted in Cloudflare R2 | [`/api/nft/evergreen.png`](https://evergreennfts.space/api/nft/evergreen.png) · [`/nft/evergreen`](https://evergreennfts.space/nft/evergreen) |
 | **is owned by code, and comes back** | `nft_token(...).owner_id` is the Steward contract; `exit` returns the NFT, its NEAR and its stake to the patron | test *"…taken back, Stake and all, into the Patron's hands"* |
-| **is operable by AI agents** | Every action is a plain transaction; state is JSON | [`/agents.md`](https://evergreen-names.vercel.app/agents.md), [`/api/names`](https://evergreen-names.vercel.app/api/names?owner=evergreen-try-06844.testnet) |
+| **is operable by AI agents** | Every action is a plain transaction; state is JSON | [`/agents.md`](https://evergreennfts.space/agents.md), [`/api/names`](https://evergreennfts.space/api/names?owner=evergreen-try-06844.testnet) |
 
 Check it live: the NFT `evergreen.ev.sachindraz.testnet` is owned by a contract and is staking with a real validator.
 
@@ -74,9 +74,9 @@ verify:
     - "principal untouched"
     - "bob.demo is Reclaimable: anyone can take it"
 live:
-  page: https://evergreen-names.vercel.app
-  testnet_json: https://evergreen-names.vercel.app/api/testnet
-  mainnet_json: https://evergreen-names.vercel.app/api/mainnet
+  page: https://evergreennfts.space
+  testnet_json: https://evergreennfts.space/api/testnet
+  mainnet_json: https://evergreennfts.space/api/mainnet
 new_code: [contracts/steward, packages/client, packages/sandbox, packages/cli, apps/web, deploy]
 unmodified_third_party: contracts/upstream (House of Stake tla-contracts @ d85860a, checksummed in CI)
 pre_hackathon_code: none (first commit 11 Nov 2026)
@@ -125,13 +125,13 @@ CI runs the same commands on every push, plus `pnpm typecheck`, a SHA-256 check 
 | 5 | The owner can take the Name back at any time, with its NEAR and its Stake | `pnpm demo` step 7 · test *"a Name made Evergreen from the published Steward code can be taken back, Stake and all, into the Patron's hands"* · `exit()` in [lib.rs](contracts/steward/src/lib.rs) |
 | 6 | Registry, wallet, registrar, extension, recovery are House of Stake's contracts, **unmodified** | [`contracts/upstream`](contracts/upstream) submodule pinned at `d85860a` · wasm checked against [`SHA256SUMS`](contracts/wasm/SHA256SUMS) in CI · rebuild: `pnpm build:contracts` (Rust + cargo-near) |
 | 7 | Works on House of Stake's *testnet* contract version, with a real one-year Lease | test *"on House of Stake's testnet contracts, an Evergreen Name renews its one-year Lease from …"* in [testnet-stack.test.ts](packages/client/test/testnet-stack.test.ts) · live on testnet (below) |
-| 8 | 80 Names are rented on NEAR mainnet today, each one expiring | `curl -s https://evergreen-names.vercel.app/api/mainnet` (reads `registry.hos` live) |
+| 8 | 80 Names are rented on NEAR mainnet today, each one expiring | `curl -s https://evergreennfts.space/api/mainnet` (reads `registry.hos` live) |
 
 ## See it running (no install)
 
 ### 1. The live chain: 60-second Leases so you can watch
 
-Open **https://evergreen-names.vercel.app** → scroll to **Live**.
+Open **https://evergreennfts.space** → scroll to **Live**.
 
 <img src="docs/img/live.jpg" alt="Live section: alice.demo (Evergreen) and bob.demo (no Steward) side by side" width="100%">
 
@@ -145,7 +145,7 @@ A real NEAR node (sandbox) on a small VM, with a keeper that pokes alice. The pa
 <img src="docs/img/testnet.jpg" alt="Testnet section: evergreen.ev.sachindraz.testnet, 365 days left, 1.00 NEAR principal, rewards above Rent" width="100%">
 
 ```bash
-curl -s https://evergreen-names.vercel.app/api/testnet
+curl -s https://evergreennfts.space/api/testnet
 ```
 
 - Name `evergreen.ev.sachindraz.testnet`, owned by Steward [`ev-evergreen-ev-sachindraz-testnet.sachindraz.testnet`](https://testnet.nearblocks.io/address/ev-evergreen-ev-sachindraz-testnet.sachindraz.testnet), staking 1 NEAR with `aurora.pool.f863973.m0`.
@@ -169,7 +169,7 @@ pnpm dev:web                     # terminal 3: http://localhost:3000
 
 Anyone can do this today with free testnet NEAR. You get a real Name on a House of Stake registry (their contracts, unmodified, in the open namespace `ev.sachindraz.testnet`), and a Steward of your own that stakes it with a real validator. **Evergreen is not the rental service**: Names are leased from House of Stake's Top Level Accounts registry; Evergreen only adds the Steward.
 
-### In your browser: [evergreen-names.vercel.app/app](https://evergreen-names.vercel.app/app)
+### In your browser: [app.evergreennfts.space](https://app.evergreennfts.space)
 
 Connect a testnet wallet (Meteor, Intear, Nightly, Ledger, or NEAR CLI via NEAR Connect), then:
 
@@ -177,7 +177,7 @@ Connect a testnet wallet (Meteor, Intear, Nightly, Ledger, or NEAR CLI via NEAR 
 2. **Make it Evergreen**: pick a stake, see the yearly rewards vs Rent estimate, approve two transactions: create your Steward, then **send it the NFT** (`nft_transfer_call`); on arrival the Steward stakes for the Name.
 3. **Manage it**: add to the Stake, poke, take it back, pay Rent by hand, transfer the Name, withdraw NEAR from the Name, and after taking it back unstake and withdraw from the pool, or hand it back to its Steward.
 
-Look at any account read-only, no wallet needed: [`/app?account=evergreen-try-06844.testnet`](https://evergreen-names.vercel.app/app?account=evergreen-try-06844.testnet). Agents: [`/agents.md`](https://evergreen-names.vercel.app/agents.md) (method reference + rules), [`/api/names?owner=you.testnet`](https://evergreen-names.vercel.app/api/names?owner=evergreen-try-06844.testnet) (state as JSON), and a copyable agent prompt on the app page.
+Look at any account read-only, no wallet needed: [`/app?account=evergreen-try-06844.testnet`](https://app.evergreennfts.space/?account=evergreen-try-06844.testnet). Agents: [`/agents.md`](https://evergreennfts.space/agents.md) (method reference + rules), [`/api/names?owner=you.testnet`](https://evergreennfts.space/api/names?owner=evergreen-try-06844.testnet) (state as JSON), and a copyable agent prompt on the app page.
 
 ### From the terminal
 

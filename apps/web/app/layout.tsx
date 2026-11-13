@@ -13,7 +13,7 @@ const description =
 // Icons and share images come from the app/ file conventions (icon.png, apple-icon.png, favicon.ico,
 // opengraph-image.png, twitter-image.png), rendered by scripts/brand.mjs.
 export const metadata: Metadata = {
-  metadataBase: new URL("https://evergreen-names.vercel.app"),
+  metadataBase: new URL("https://evergreennfts.space"),
   title,
   description,
   applicationName: "Evergreen",

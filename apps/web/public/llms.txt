@@ -17,8 +17,8 @@ Look for: "alice.demo renewed itself 2 times with no payment from ana", "princip
 
 ## Use it on your own Name (NEAR testnet, free)
 
-In a browser: https://evergreen-names.vercel.app/app (connect Meteor or another testnet wallet; rent, make Evergreen, manage). Read-only view of any account: /app?account=<you.testnet>.
-For agents: https://evergreen-names.vercel.app/agents.md (constants, every method with args/deposit/gas, rules) and https://evergreen-names.vercel.app/api/names?owner=<you.testnet> (JSON state).
+In a browser: https://app.evergreennfts.space (connect Meteor or another testnet wallet; rent, make Evergreen, manage). Read-only view of any account: /app?account=<you.testnet>.
+For agents: https://evergreennfts.space/agents.md (constants, every method with args/deposit/gas, rules) and https://evergreennfts.space/api/names?owner=<you.testnet> (JSON state).
 Evergreen is not the rental service: Names are leased from House of Stake's Top Level Accounts registry.
 
 From a terminal:
@@ -40,10 +40,10 @@ Tested from a brand-new faucet account: hello.ev.sachindraz.testnet. Not on main
 
 ## Live data (JSON, no JavaScript needed)
 
-- [/api/demo](https://evergreen-names.vercel.app/api/demo): the hosted demo chain. alice.demo (Evergreen) and bob.demo (no Steward), 60-second Leases (demo-only; real Leases are 1 year).
-- [/api/testnet](https://evergreen-names.vercel.app/api/testnet): a real Evergreen Name on NEAR testnet, one-year Lease, staked with a real validator. Steward: ev-evergreen-ev-sachindraz-testnet.sachindraz.testnet
-- [/api/nft/evergreen.png](https://evergreen-names.vercel.app/api/nft/evergreen.png): live card of an Evergreen NFT (willow = share of the Lease left, Stake, renewals). Any Name: /api/nft/<label>.png
-- [/api/mainnet](https://evergreen-names.vercel.app/api/mainnet): live census of Names rented on NEAR mainnet (registry.hos).
+- [/api/demo](https://evergreennfts.space/api/demo): the hosted demo chain. alice.demo (Evergreen) and bob.demo (no Steward), 60-second Leases (demo-only; real Leases are 1 year).
+- [/api/testnet](https://evergreennfts.space/api/testnet): a real Evergreen Name on NEAR testnet, one-year Lease, staked with a real validator. Steward: ev-evergreen-ev-sachindraz-testnet.sachindraz.testnet
+- [/api/nft/evergreen.png](https://evergreennfts.space/api/nft/evergreen.png): live card of an Evergreen NFT (willow = share of the Lease left, Stake, renewals). Any Name: /api/nft/<label>.png
+- [/api/mainnet](https://evergreennfts.space/api/mainnet): live census of Names rented on NEAR mainnet (registry.hos).
 
 ## Key files
 

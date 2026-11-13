@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, Check, Copy } from "@phosphor-icons/react";
-import Link from "next/link";
+import { APP_URL } from "@/lib/site";
 import { useRef, useState } from "react";
 import { Reveal } from "./Motion";
 
@@ -55,10 +55,10 @@ export function UseIt() {
           validator.
         </p>
         <p className="use-cta">
-          <Link className="btn" href="/app">
+          <a className="btn" href={APP_URL}>
             Open the app <ArrowRight aria-hidden="true" />
-          </Link>
-          <span className="small">Connect a wallet, rent, stake, manage. Or do it all from a terminal:</span>
+          </a>
+          <span className="small">Connect a wallet, rent, stake, manage. Or, once you have a Name, from a terminal:</span>
         </p>
 
         <div className="use-fields">
@@ -82,15 +82,12 @@ export function UseIt() {
             <Cmd text={`npx near-cli-rs account create-account sponsor-by-faucet-service ${you} autogenerate-new-keypair save-to-legacy-keychain network-config testnet create`} />
           </li>
           <li>
-            <h3>Rent a Name</h3>
+            <h3>Make it Evergreen</h3>
             <p className="small">
-              <code>{name}</code> becomes yours for a year: an NFT and a real account. 0.01 NEAR.
+              First <a href={APP_URL}>rent <code>{name}</code> in the app</a> with the same account. Then, from a
+              clone of the repo:
             </p>
             <Cmd text={`git clone ${REPO} && cd Evergreen && pnpm install`} />
-            <Cmd text={`pnpm evergreen testnet rent ${mine} --account ${you}`} />
-          </li>
-          <li>
-            <h3>Make it Evergreen</h3>
             <p className="small">
               You sign two transactions: create your Steward holding the Stake, then send it the NFT. On arrival it funds the Name and stakes. About 3.8 NEAR: 3 staked
               and never spent, 0.3 for the Steward account, 0.5 left on the Name.

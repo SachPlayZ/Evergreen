@@ -11,7 +11,7 @@ import { NET, validLabel } from "@/lib/testnet";
 
 const YEAR = 365 * 86400;
 const C = { ink: "#070a06", surface: "#0f150d", text: "#ecebdc", muted: "#a4aa93", leaf: "#b6e04a", mid: "#6fbf3c", deep: "#2c7d36", ember: "#ef5a2f", line: "rgba(236,235,220,0.14)" };
-const near = (y: bigint) => (Number(y / 10n ** 21n) / 1000).toFixed(3);
+const near = (y: bigint) => (Number(y) / 1e24).toFixed(3);
 
 function WillowArt({ health, alive }: { health: number; alive: boolean }) {
   const { dots, trunk, ground, width, height } = willowGeometry(alive ? health : 0);
@@ -81,7 +81,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/nft/[name]">) {
               <Row k="Owner" v={lease.owner.length > 30 ? `${lease.owner.slice(0, 28)}…` : lease.owner} />
             )}
           </div>
-          <div style={{ display: "flex", marginTop: "auto", fontSize: 20, color: C.muted }}>evergreen-names.vercel.app · NEAR testnet</div>
+          <div style={{ display: "flex", marginTop: "auto", fontSize: 20, color: C.muted }}>evergreennfts.space · NEAR testnet</div>
         </div>
       </div>
     ),

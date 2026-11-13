@@ -1,6 +1,6 @@
 # Evergreen: agent guide
 
-A NEAR Name is a NEP-171 NFT (`registry.nft_token`) that is also a real account. Evergreen makes that NFT self-sustaining: it holds and stakes its own NEAR and pays its own Rent. Use this to manage such NFTs on **NEAR testnet**: rent a Name, make it renew itself from staking rewards, and manage its NEAR and Stake. Human UI for the same actions: https://evergreen-names.vercel.app/app
+A NEAR Name is a NEP-171 NFT (`registry.nft_token`) that is also a real account. Evergreen makes that NFT self-sustaining: it holds and stakes its own NEAR and pays its own Rent. Use this to manage such NFTs on **NEAR testnet**: rent a Name, make it renew itself from staking rewards, and manage its NEAR and Stake. Human UI for the same actions: https://app.evergreennfts.space
 
 - Evergreen is **not** the rental service. Names are leased from House of Stake's Top Level Accounts registry (https://github.com/houseofstake/tla-contracts). On testnet that registry is an unmodified copy at `registry.sachindraz.testnet`, because House of Stake's own testnet registry is paused (stale price oracle).
 - Testnet only. The Steward contract is new and unaudited.
@@ -21,12 +21,12 @@ A NEAR Name is a NEP-171 NFT (`registry.nft_token`) that is also a real account.
 ## Read state (always do this first)
 
 ```bash
-curl -s "https://evergreen-names.vercel.app/api/names?owner=you.testnet"
+curl -s "https://evergreennfts.space/api/names?owner=you.testnet"
 ```
 
 Returns every Name `you.testnet` holds (directly, or through its own Steward): `status`, `secondsLeft`, `balanceYocto` (plain NEAR on the Name), `evergreen`, `steward` (`phase`, `principalYocto`, `stakedYocto`, `rewardsYocto`, `needYocto`, `renewals`), and `pool` (the Name's position in the pool, also after you take it back). 1 NEAR = 10^24 yocto.
 
-Live card image of any Name (PNG, 1200×630, for sharing or showing the user): `https://evergreen-names.vercel.app/api/nft/<label or full name>.png`
+Live card image of any Name (PNG, 1200×630, for sharing or showing the user): `https://evergreennfts.space/api/nft/<label or full name>.png`
 
 Direct views (no signing):
 

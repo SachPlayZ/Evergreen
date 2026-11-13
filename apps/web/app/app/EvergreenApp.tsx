@@ -17,10 +17,10 @@ import {
   type Tx,
 } from "@evergreen-names/client";
 import { ArrowUpRight, Check, CircleNotch, Leaf, SignOut, Warning, Wallet } from "@phosphor-icons/react";
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { balanceOf, client, namesOf, priceOf, type NameView } from "@/lib/names";
 import { NET, explorerAccount, explorerTx, validLabel } from "@/lib/testnet";
+import { SITE, sharePage } from "@/lib/site";
 import { WalletProvider, useWallet } from "@/lib/wallet";
 import { AgentKit } from "./AgentKit";
 
@@ -38,6 +38,13 @@ const days = (s: number) => (s <= 0 ? "expired" : s < 172_800 ? `${Math.round(s 
 const parseNear = (s: string) => {
   const t = s.trim();
   return /^\d+(\.\d{1,24})?$/.test(t) && Number(t) > 0 ? nearToYocto(t) : undefined;
+};
+
+/** An X post linking the Name's share page; X previews it with the card from R2. */
+const shareOnX = (name: string) => {
+  const label = name.slice(0, -(NET.namespace.length + 1));
+  const text = `My NFT pays its own rent. ${label} stakes its own NEAR and renews itself, forever. Built on NEAR with Evergreen.`;
+  return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(sharePage(label))}`;
 };
 
 export function EvergreenApp() {
@@ -143,9 +150,9 @@ function AppBody() {
   return (
     <>
       <header className="app-bar">
-        <Link className="wordmark" href="/">
+        <a className="wordmark" href={SITE}>
           Evergreen
-        </Link>
+        </a>
         <span className="net-badge">Testnet</span>
         <div className="app-bar-end">
           {accountId ? (
@@ -392,6 +399,10 @@ function NameCard({ n, me, act, readOnly }: { n: NameView; me: string; act: Act;
       <p className="small">
         <a href={`/api/nft/${n.name}.png`} target="_blank" rel="noreferrer">
           Live NFT card <ArrowUpRight aria-hidden="true" />
+        </a>
+        {" · "}
+        <a href={shareOnX(n.name)} target="_blank" rel="noreferrer">
+          Share on X <ArrowUpRight aria-hidden="true" />
         </a>
       </p>
 

@@ -37,7 +37,7 @@ async function view<T>(contract: string, method: string, args: object): Promise<
 type Token = { token_id: string; owner_id: string; metadata?: { extra?: string } };
 type Proof = { token: Token; staked: string };
 
-const near = (yocto: string) => (Number(BigInt(yocto) / 10n ** 21n) / 1000).toFixed(3);
+const near = (yocto: string) => (Number(yocto) / 1e24).toFixed(3);
 
 /** The NFT, read live from NEAR testnet: owned by a contract, and staking in its own name. */
 function LiveToken() {

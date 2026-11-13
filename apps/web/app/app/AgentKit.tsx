@@ -2,9 +2,8 @@
 
 import { Check, Copy } from "@phosphor-icons/react";
 import { useState } from "react";
+import { SITE } from "@/lib/site";
 import { NET } from "@/lib/testnet";
-
-const SITE = "https://evergreen-names.vercel.app";
 
 /** The whole agent brief, one paste. Mirrors /agents.md. */
 export function agentPrompt(account = "<you.testnet>") {

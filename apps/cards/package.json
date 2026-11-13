@@ -1,0 +1,16 @@
+{
+  "name": "@evergreen-names/cards",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker: serves NFT card snapshots from R2 at cards.evergreennfts.space (for X/OG previews).",
+  "scripts": {
+    "deploy": "cf deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "2.0.0-beta.v.17",
+    "@cloudflare/workers-types": "^5.20261113.1",
+    "cf": "0.15.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8"
+  }
+}

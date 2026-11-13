@@ -14,6 +14,17 @@ journalctl -u evergreen-keeper -f
 Vercel env: `EVERGREEN_RPC_URL=https://<vm-ip-dashed>.sslip.io`, `EVERGREEN_REGISTRY_ID=registry`, `EVERGREEN_NAMESPACE=demo`,
 `EVERGREEN_TERM_SECS=60`, `EVERGREEN_NETWORK_LABEL=demo chain`.
 
+### Domains and share cards (Cloudflare)
+
+DNS for `evergreennfts.space` is on Cloudflare (zone `8565b95266736984d0b22d06c7f5b93f`). The apex, `www`, `app` and `docs` point at Vercel, DNS-only; `next.config.ts` serves `/app` on `app.` and `/docs` on `docs.`.
+
+`cards.evergreennfts.space` is the `evergreen-cards` Worker ([apps/cards](../apps/cards)): it serves `<label>.png` from the R2 bucket `evergreen-nft-cards`, re-rendering from `/api/nft/<label>.png` at most hourly. Share pages (`evergreennfts.space/nft/<label>`) use it as their `og:image`, so X shows the card.
+
+```bash
+cf r2 buckets create evergreen-nft-cards
+cd apps/cards && cf deploy
+```
+
 ### Continuous deploy
 
 Every push to `main` that passes `ci` runs [`deploy-keeper.yml`](../.github/workflows/deploy-keeper.yml): it SSHes to the VM and runs [`update.sh`](update.sh) (pull, install if the lockfile changed, refresh units, restart both keepers and the gateway; never the chain). The CI key can run only that script. One-time setup from your machine:
