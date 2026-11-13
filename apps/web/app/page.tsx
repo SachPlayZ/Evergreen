@@ -6,6 +6,8 @@ import { LiveProvider } from "./components/LiveData";
 import { LiveNames } from "./components/LiveNames";
 import { Parallax, SmoothScroll } from "./components/Motion";
 
+const REPO = "https://github.com/SachPlayZ/Evergreen";
+
 /** Moths rising through the night at the foot of the page. Position is % of the footer. */
 const NIGHT = [
   { n: 5, left: "6%", top: "58%", size: 190, drift: 30 },
@@ -28,6 +30,7 @@ export default function Home() {
           <a href="#how">How it works</a>
           <a href="#mainnet">Mainnet</a>
           <a href="#cost">Cost</a>
+          <a href={REPO}>GitHub</a>
         </div>
       </nav>
 
@@ -52,7 +55,10 @@ export default function Home() {
         <p className="foot-big">
           Stay <em>green.</em>
         </p>
-        <p className="fine">Evergreen. Built for the NEAR Hackathon, November 2026. MIT licence.</p>
+        <p className="fine">
+          Evergreen. Built for the NEAR Hackathon, November 2026. MIT licence. <a href={REPO}>Source on GitHub</a> · verify
+          with <code>pnpm demo</code> · <a href="/llms.txt">llms.txt</a>
+        </p>
       </footer>
     </LiveProvider>
   );

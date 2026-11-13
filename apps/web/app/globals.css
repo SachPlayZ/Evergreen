@@ -867,6 +867,11 @@ a.hero-card:hover {
 .foot .fine {
   position: relative;
 }
+.foot .fine a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 
 @media (max-width: 900px) {
   .nav-links a:not(:first-child) {

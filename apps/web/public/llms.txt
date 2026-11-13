@@ -1,0 +1,34 @@
+# Evergreen
+
+> NEAR Top Level Account Names (NFTs that are also accounts) now expire after a one-year Lease. An Evergreen Name is owned by a Steward contract that stakes the Name's own NEAR and pays its yearly Rent from the staking rewards only. The principal is never spent. Built at NEAR HACKATHON (Nov 2026), track "NFTs That Do Something".
+
+Source: https://github.com/SachPlayZ/Evergreen (MIT). Start with README.md and AGENTS.md there.
+
+## Verify it (Node 22+, pnpm; no Rust, keys or network accounts)
+
+```bash
+git clone --recursive https://github.com/SachPlayZ/Evergreen && cd Evergreen
+pnpm install
+pnpm test    # 7 scenarios against a local NEAR sandbox, ~2.5 min
+pnpm demo    # whole story, PASS/FAIL per claim, exits non-zero on any FAIL, ~2.5 min
+```
+
+Look for: "alice.demo renewed itself 2 times with no payment from ana", "principal untouched", "bob.demo is Reclaimable: anyone can take it".
+
+## Live data (JSON, no JavaScript needed)
+
+- [/api/demo](https://evergreen-names.vercel.app/api/demo): the hosted demo chain. alice.demo (Evergreen) and bob.demo (no Steward), 60-second Leases (demo-only; real Leases are 1 year).
+- [/api/testnet](https://evergreen-names.vercel.app/api/testnet): a real Evergreen Name on NEAR testnet, one-year Lease, staked with a real validator. Steward: ev-evergreen-ev-sachindraz-testnet.sachindraz.testnet
+- [/api/mainnet](https://evergreen-names.vercel.app/api/mainnet): live census of Names rented on NEAR mainnet (registry.hos).
+
+## Key files
+
+- [Steward contract](https://github.com/SachPlayZ/Evergreen/blob/main/contracts/steward/src/lib.rs): new, unaudited. Public: new, stake, tip, poke (anyone), exit (Patron), get_status.
+- [Tests](https://github.com/SachPlayZ/Evergreen/tree/main/packages/client/test): every claim is a scenario here.
+- [Glossary](https://github.com/SachPlayZ/Evergreen/blob/main/GLOSSARY.md) and [ADRs](https://github.com/SachPlayZ/Evergreen/tree/main/docs/adr).
+
+## What is real
+
+- Real, unmodified: House of Stake Top Level Accounts contracts (registry, wallet, registrar), git submodule pinned at d85860a, wasm checksummed in CI.
+- Demo-only: 60-second Leases and Grace on the hosted chain; a demo staking pool that pays rewards on demand.
+- All code written during the hackathon (first commit 11 Nov 2026). Built with Claude Code.
