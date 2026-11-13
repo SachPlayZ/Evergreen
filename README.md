@@ -48,6 +48,8 @@ The page also reads **mainnet** live: every rented Name and which runs out first
 | New, unaudited | `contracts/steward` |
 | Demo-only | 60s Leases and Grace (real: 1 year / 14 days). `contracts/demo-pool` pays rewards on demand and releases unstaked NEAR at once (real pools: ~5%/yr, 2-3 epoch delay). The keeper also plays the price oracle and the pool's rewards. |
 
+On House of Stake's own testnet registry (`registry.hosdemo.testnet`, contracts compatible with ours), `pnpm evergreen testnet adopt <label>.hosdemo.testnet --account you.testnet` rents a Name and makes it Evergreen in a real testnet staking pool, deploying only the Steward (about 6 testnet NEAR). It needs that registry's NEAR/USD rate to be fresh; its oracle has been idle since 27 Aug 2026.
+
 The hosted demo is a NEAR sandbox on a small VM, served through a read-only RPC gateway (`deploy/`). A faithful testnet copy is scripted (`pnpm evergreen testnet deploy --account you.testnet`) but costs ~74 testnet NEAR, mostly the wallet code published as a global contract.
 
 ## Layout
