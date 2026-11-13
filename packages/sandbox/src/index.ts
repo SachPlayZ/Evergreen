@@ -226,6 +226,15 @@ export async function deployStack(o: StackOptions): Promise<void> {
   });
 }
 
+/** A sandbox with nothing deployed: just these genesis accounts, all signing with `key`. */
+export async function startBareSandbox(accounts: string[]): Promise<{ rpcUrl: string; key: typeof DEFAULT_PRIVATE_KEY; stop(): Promise<void> }> {
+  const sandbox = await Sandbox.start({
+    version: SANDBOX_VERSION,
+    config: { additionalAccounts: accounts.map((id) => GenesisAccount.createDefault(id)) },
+  });
+  return { rpcUrl: sandbox.rpcUrl, key: DEFAULT_PRIVATE_KEY, stop: () => sandbox.tearDown() };
+}
+
 export async function startSandbox(options: SandboxOptions = {}): Promise<EvergreenSandbox> {
   const leaseSecs = options.leaseSecs ?? 60;
   const graceSecs = options.graceSecs ?? 60;

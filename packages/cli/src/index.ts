@@ -28,7 +28,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Evergreen, ONE_YOCTO, call, nearToYocto, stakeNeededYocto, stewardIdFor, yoctoToNear } from "@evergreen-names/client";
 import { IDS, startSandbox, wasm } from "@evergreen-names/sandbox";
-import { TESTNET_RPC, deployTestnet, testnetKey } from "@evergreen-names/sandbox/testnet";
+import { TESTNET_RPC, deployTestnet, refreshRate, testnetKey } from "@evergreen-names/sandbox/testnet";
 import { DEFAULT_PRIVATE_KEY } from "near-sandbox";
 import { runDemo } from "./demo";
 
@@ -100,15 +100,17 @@ async function main(): Promise<void> {
   if (command === "testnet") {
     if (rest[0] !== "deploy" || !flags.account) throw new Error("Usage: evergreen testnet deploy --account <you.testnet>");
     console.log(`Deploying to testnet under ${flags.account}. Each step runs once; run again to resume.`);
-    const { state } = await deployTestnet({ root: flags.account, statePath: TESTNET_FILE, rpcUrl: flags.rpc || undefined });
-    console.log(`Done. alice.${state.namespace} is Evergreen; bob.${state.namespace} has no Steward.`);
-    console.log("Point the web page at it with these env vars:");
-    console.log(`  EVERGREEN_RPC_URL=${state.rpcUrl}`);
-    console.log(`  EVERGREEN_REGISTRY_ID=${state.registryId}`);
-    console.log(`  EVERGREEN_NAMESPACE=${state.namespace}`);
-    console.log(`  EVERGREEN_TERM_SECS=${state.termSecs}`);
-    console.log(`  EVERGREEN_NETWORK_LABEL=testnet copy`);
-    console.log("Then keep it alive: EVERGREEN_NETWORK=testnet pnpm evergreen keeper run");
+    const { state } = await deployTestnet({
+      root: flags.account,
+      key: testnetKey(flags.account),
+      statePath: TESTNET_FILE,
+      rpcUrl: flags.rpc || undefined,
+      pool: flags.pool || undefined,
+    });
+    for (const [name, steward] of Object.entries(state.stewards)) {
+      console.log(`Done. ${name} is Evergreen, staked in ${state.poolId}. Steward: https://testnet.nearblocks.io/address/${steward}`);
+    }
+    console.log("Keep its rate fresh and poke it when due: EVERGREEN_NETWORK=testnet pnpm evergreen keeper run");
     return;
   }
 
@@ -232,6 +234,7 @@ async function main(): Promise<void> {
       break;
     }
     case "keeper": {
+      if (env.root) return testnetKeeper(client, env);
       // DEMO: the Keeper also plays the pool's rewards and the price oracle.
       const keeper = signerFor(client, env, "keeper");
       const relay = signerFor(client, env, IDS.relay);
@@ -297,6 +300,31 @@ async function main(): Promise<void> {
     }
     default:
       throw new Error(`Unknown command "${command}". Run "evergreen help".`);
+  }
+}
+
+/**
+ * Testnet Keeper: real pool, real rewards, so no drips. Every 5 minutes it keeps the registry's
+ * NEAR/USD rate fresh (the root account is the oracle) and pokes a Steward only when there is
+ * something to do: rewards cover the next Rent, an unstake or withdrawal is in flight, or the lapse guard is near.
+ */
+async function testnetKeeper(client: Evergreen, env: Env): Promise<never> {
+  const root = client.account(env.root!, testnetKey(env.root!));
+  console.log(`Testnet keeper for ${Object.keys(env.stewards).join(", ")}. Checks every 5 minutes. Ctrl+C stops it.`);
+  for (;;) {
+    await refreshRate(client, root, env.registryId).catch((error) => console.log(`rate: ${error.message}`));
+    for (const [name, stewardId] of Object.entries(env.stewards)) {
+      try {
+        const s = await client.getSteward(stewardId);
+        const due = s.phase !== "Idle" || s.rewardsYocto >= s.needYocto || s.lease.secondsLeft <= Number(s.lapseGuardNs / 1_000_000_000n) + 3600;
+        if (typeof s.phase === "object" && "Evacuated" in s.phase) continue;
+        const result = due ? await client.poke(root, stewardId) : "not_due";
+        console.log(`${name}: ${result}; rewards ${yoctoToNear(s.rewardsYocto, 6)} of ${yoctoToNear(s.needYocto, 6)} NEAR needed`);
+      } catch (error: any) {
+        console.log(`${name}: ${error.message}`);
+      }
+    }
+    await new Promise((r) => setTimeout(r, 300_000));
   }
 }
 

@@ -93,7 +93,7 @@ function firstFailure(outcome: any): string | undefined {
 }
 
 function describe(failure: unknown): string {
-  const text = JSON.stringify(failure).replace(/\\+"/g, '"');
+  const text = JSON.stringify(failure, (_key, value) => (typeof value === "bigint" ? value.toString() : value)).replace(/\\+"/g, '"');
   // Registry errors look like {"code":"sub_account_past_grace_period"}.
   const code = /Smart contract panicked: \{"code":"([a-z_]+)"/.exec(text);
   if (code) return code[1];
