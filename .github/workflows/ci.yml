@@ -17,7 +17,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Prebuilt wasm matches its checksums
-        run: cd contracts/wasm && sha256sum -c SHA256SUMS
+        run: cd contracts/wasm && sha256sum -c SHA256SUMS && cd d12a84b && sha256sum -c SHA256SUMS
       - run: pnpm typecheck
       - name: Tests (client against a local NEAR sandbox)
         run: pnpm test
