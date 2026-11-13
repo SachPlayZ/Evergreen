@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Reveal } from "./Motion";
 
 const RPC = "https://test.rpc.fastnear.com";
@@ -54,28 +54,30 @@ function LiveToken() {
 
   if (failed) return null;
   const expires = proof?.token.metadata?.extra ? JSON.parse(proof.token.metadata.extra).expires_at : null;
+  const rows: [string, ReactNode, string?][] = [
+    ["token_id", NAME],
+    ["owner_id", proof ? <mark>{proof.token.owner_id}</mark> : "…", "A contract, the Steward, not a person"],
+    ["expires_at", proof && expires ? new Date(Number(BigInt(expires) / 1_000_000n)).toISOString().slice(0, 10) : "…"],
+    ["staked by the NFT", proof ? <strong className="num">{near(proof.staked)} NEAR</strong> : "…", `with ${POOL}`],
+  ];
   return (
     <figure className="nft-proof" aria-busy={!proof}>
-      <figcaption className="small">
-        Live from NEAR testnet · <code>{REGISTRY}.nft_token</code> (NEP-171)
+      <figcaption>
+        <span className="nft-live-dot" aria-hidden /> Live from NEAR testnet
+        <code className="small">{REGISTRY}.nft_token</code>
       </figcaption>
-      <pre>
-        <code>
-          {"{\n"}
-          {`  "token_id": "${NAME}",\n`}
-          {`  "owner_id": `}
-          <mark>{proof ? `"${proof.token.owner_id}"` : "…"}</mark>
-          {proof && expires ? `,\n  "expires_at": "${new Date(Number(BigInt(expires) / 1_000_000n)).toISOString().slice(0, 10)}"` : ""}
-          {"\n}"}
-        </code>
-      </pre>
-      <p className="small">
-        <mark>owner_id</mark> is the Steward: a contract, not a person. And the NFT&apos;s own account is staking{" "}
-        <strong className="num">{proof ? near(proof.staked) : "…"} NEAR</strong> with <code>{POOL}</code>.{" "}
-        <a href={`https://testnet.nearblocks.io/address/${NAME}`} target="_blank" rel="noreferrer">
-          See it on the explorer
-        </a>
-      </p>
+      <dl>
+        {rows.map(([k, v, note]) => (
+          <div key={k}>
+            <dt className="mono">{k}</dt>
+            <dd className="mono">{v}</dd>
+            {note && <dd className="small">{note}</dd>}
+          </div>
+        ))}
+      </dl>
+      <a className="nft-proof-link small" href={`https://testnet.nearblocks.io/address/${NAME}`} target="_blank" rel="noreferrer">
+        See it on the explorer ↗
+      </a>
     </figure>
   );
 }
@@ -91,19 +93,20 @@ export function NftAgent() {
           Every NEAR Name is a NEP-171 token and, at the same time, a real account. Evergreen gives that token a job: it
           holds money, earns, pays for its own existence, and outlives anyone&apos;s attention.
         </p>
-        <ol className="nft-powers">
-          {POWERS.map((p) => (
-            <li key={p.title}>
-              <h3>{p.title}</h3>
-              <p className="small">{p.text}</p>
-            </li>
-          ))}
-        </ol>
         <div className="nft-live">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="nft-card-img" src={`/api/nft/${NAME}.png`} alt={`Live card of the NFT ${NAME}: its willow, Lease left and Stake`} width={1200} height={630} loading="lazy" />
           <LiveToken />
         </div>
+        <ol className="nft-powers">
+          {POWERS.map((p, i) => (
+            <li key={p.title}>
+              <span className="nft-power-n mono">{String(i + 1).padStart(2, "0")}</span>
+              <h3>{p.title}</h3>
+              <p className="small">{p.text}</p>
+            </li>
+          ))}
+        </ol>
       </Reveal>
     </section>
   );
