@@ -275,7 +275,7 @@ export async function startSandbox(options: SandboxOptions = {}): Promise<Evergr
       await call(relay, IDS.pool, "drip_reward", { account_id: name }, { deposit: amountYocto });
     },
     async refreshRate() {
-      await call(council, IDS.registry, "set_near_usd_rate", { rate: String(nearUsdMicro) }, { deposit: ONE_YOCTO });
+      await call(council, IDS.registry, "set_near_usd_rate", { rate: String(nearUsdMicro) });
     },
     async advance(secs) {
       const target = (await client.chainTimeNs()) + BigInt(secs) * 1_000_000_000n;

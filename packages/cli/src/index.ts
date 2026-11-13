@@ -288,12 +288,12 @@ async function main(): Promise<void> {
             console.log(`${lease.name}: ${error.message}`);
           }
         }
-        // The NEAR/USD rate goes stale after 6h; refresh it now and then (cooldown is 5 min).
+        // The NEAR/USD rate goes stale after 6h; refresh it now and then (set_near_usd_rate is not payable).
         if (++ticks % 120 === 0) {
           await client.rpc
             .callFunction({ contractId: env.registryId, method: "get_near_usd_rate", args: {} })
-            .then((rate) => call(council, env.registryId, "set_near_usd_rate", { rate }, { deposit: ONE_YOCTO }))
-            .catch(() => {});
+            .then((rate) => call(council, env.registryId, "set_near_usd_rate", { rate }))
+            .catch((error) => console.log(`rate: ${error.message}`));
         }
         await new Promise((r) => setTimeout(r, 3000));
       }
