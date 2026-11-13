@@ -1,6 +1,6 @@
-contracts
-tasks
-docs
+/contracts
+/tasks
+/docs
 .evergreen
 .github
 *.md
