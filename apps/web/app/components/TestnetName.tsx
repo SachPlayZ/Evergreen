@@ -49,8 +49,8 @@ export function TestnetName() {
         And one <em>for real</em>, on testnet.
       </h3>
       <p className="small">
-        A one-year Lease, staked with a real validator. Rent is a tenth of a cent, so real rewards cover it in days, and
-        the Steward renews it with no one paying.
+        A one-year Lease, staked with a real validator. Rent here is a thousandth of a cent, so the first epoch of real
+        rewards covers it; the pool holds unstaked NEAR for about two days, then the Steward renews with no one paying.
       </p>
       <dl className="testnet-stats">
         <div>

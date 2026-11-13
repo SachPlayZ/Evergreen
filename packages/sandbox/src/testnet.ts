@@ -9,8 +9,8 @@
  * oracle and treasury. The Steward stakes in a real testnet validator's pool.
  *
  * REAL SETTINGS: one-year Leases and a one-day Grace (the minimum at d12a84b), real staking
- * rewards. Rent is set to $0.001 a year, so real rewards cover it within days and the Steward's
- * first self-renewal can be watched.
+ * rewards. DEMO SETTING: Rent is $0.00001 a year, so one epoch of real rewards covers it and the
+ * Steward's first self-renewal lands within days (the pool's unstake delay is 4 epochs).
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -207,7 +207,7 @@ export async function deployTestnet(options: DeployOptions): Promise<{ state: Te
   await step("fees", async () => {
     const fee: any = await client.rpc.callFunction({ contractId: ids.registry, method: "get_fee_config", args: {} });
     for (const tier of ["rent_tier_5_usd_micro", "rent_tier_8_usd_micro", "rent_tier_10_usd_micro", "rent_tier_12plus_usd_micro"]) {
-      fee[tier] = "1000"; // $0.001 a year, as on House of Stake's testnet registry
+      fee[tier] = "10"; // $0.00001 a year: one epoch of real rewards on 1 NEAR covers it
     }
     fee.account_creation_deposit_yocto = nearToYocto("0.01").toString();
     await call(rootAccount, ids.registry, "update_fee_config", { config: fee }, { deposit: ONE_YOCTO });
