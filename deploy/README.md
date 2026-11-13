@@ -14,5 +14,13 @@ journalctl -u evergreen-keeper -f
 Vercel env: `EVERGREEN_RPC_URL=https://<vm-ip-dashed>.sslip.io`, `EVERGREEN_REGISTRY_ID=registry`, `EVERGREEN_NAMESPACE=demo`,
 `EVERGREEN_TERM_SECS=60`, `EVERGREEN_NETWORK_LABEL=demo chain`.
 
+### Continuous deploy
+
+Every push to `main` that passes `ci` runs [`deploy-keeper.yml`](../.github/workflows/deploy-keeper.yml): it SSHes to the VM and runs [`update.sh`](update.sh) (pull, install if the lockfile changed, refresh units, restart both keepers and the gateway; never the chain). The CI key can run only that script. One-time setup from your machine:
+
+```bash
+bash deploy/setup-ci.sh <your-vm-ssh-key> ubuntu@<vm-ip>
+```
+
 `pnpm evergreen testnet deploy --account <you.testnet>` deploys the same stack to testnet instead
 (about 74 testnet NEAR, mostly the wallet code published as a global contract).

@@ -6,9 +6,9 @@ const display = Newsreader({ variable: "--font-display", subsets: ["latin"], sty
 const sans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
-const title = "Evergreen: NEAR names that keep themselves alive";
+const title = "Evergreen: the NFT that pays its own rent";
 const description =
-  "NEAR names now expire. An Evergreen Name is owned by a Steward contract that pays its yearly Rent from its own staking rewards.";
+  "A NEAR Name is an NFT that is also an account. Evergreen gives it a job: it stakes its own NEAR, earns, and pays its own yearly Rent from the rewards, forever. Principal never spent.";
 
 // Icons and share images come from the app/ file conventions (icon.png, apple-icon.png, favicon.ico,
 // opengraph-image.png, twitter-image.png), rendered by scripts/brand.mjs.

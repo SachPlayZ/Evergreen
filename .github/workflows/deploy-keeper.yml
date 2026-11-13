@@ -1,0 +1,30 @@
+name: deploy keeper
+# After ci passes on main, update the VM (keepers + gateway) with deploy/update.sh.
+# The SSH key in KEEPER_SSH_KEY can only run that script (forced command on the VM).
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-keeper
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: SSH key and pinned host key
+        env:
+          KEY: ${{ secrets.KEEPER_SSH_KEY }}
+          KNOWN: ${{ secrets.KEEPER_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
+      - name: Run deploy/update.sh on the VM
+        run: ssh -o BatchMode=yes -o StrictHostKeyChecking=yes ${{ secrets.KEEPER_HOST }}

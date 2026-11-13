@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>NEAR names now expire. An Evergreen Name pays its own Rent, from its own staking rewards, forever.</b>
+  <b>An NFT with its own bank account: it stakes, earns, and pays its own Rent, forever. Principal never spent.</b>
 </p>
 
 <p align="center">
@@ -26,6 +26,27 @@ A NEAR Top Level Account Name (`alice.bot`) is an NFT that is also a real accoun
 
 Evergreen makes that NFT *do something*: it stakes its own NEAR, and a small contract (the **Steward**) uses only the rewards to renew the Lease every year. The principal is never spent. Nobody has to remember anything.
 
+### Why this is an NFT that does something
+
+Most NFTs are a pointer to a JPEG. This one is an economic agent. Every NEAR Name is a **NEP-171 token** in House of Stake's registry (`nft_token`, `nft_transfer`, `nft_transfer_call`) **and** a real NEAR account with its own wallet contract. Evergreen gives the token a job:
+
+| The NFT… | How | Proof |
+| --- | --- | --- |
+| **is a wallet** | The token is an account: it holds NEAR and executes actions through its wallet contract | `w_execute_extension` in every `withdrawFromNameTx` / `stakeFromNameTx` ([txs.ts](packages/client/src/txs.ts)) |
+| **earns** | The NFT's own account is the staker; stake and rewards sit with the validator in its name | `get_account_staked_balance(<the Name>)` on the pool; demo step 3 |
+| **pays its own bills** | The Steward renews the Lease from rewards only | demo: *"renewed itself 2 times with no payment from ana"*, *"principal untouched"* |
+| **can't die of neglect** | `poke` is permissionless; no server is trusted | demo step 5; the hosted keeper is just one poker among anyone |
+| **can be kept alive by strangers** | Anyone can send a Lifeline (`tip`) that joins the stake | demo: *"fan's Tip joined the Stake"* |
+| **is owned by code, and comes back** | `nft_token(...).owner_id` is the Steward contract; `exit` returns the NFT, its NEAR and its stake to the patron | test *"…taken back, Stake and all, into the Patron's hands"* |
+| **is operable by AI agents** | Every action is a plain transaction; state is JSON | [`/agents.md`](https://evergreen-names.vercel.app/agents.md), [`/api/names`](https://evergreen-names.vercel.app/api/names?owner=evergreen-try-06844.testnet) |
+
+Check it live: the NFT `evergreen.ev.sachindraz.testnet` is owned by a contract and is staking with a real validator.
+
+```bash
+near contract call-function as-read-only registry.sachindraz.testnet nft_token json-args '{"token_id":"evergreen.ev.sachindraz.testnet"}' network-config testnet now
+# → "owner_id": "ev-evergreen-ev-sachindraz-testnet.sachindraz.testnet"   (the Steward contract)
+```
+
 <p align="center">
   <img src="docs/img/renewal.gif" alt="alice.demo countdown falls to 24s, then renews itself back to 83s, paid from staking rewards" width="720"><br>
   <sub>The live page, recorded. <code>alice.demo</code> falls to 24s, the Steward pays Rent from rewards, and the Lease jumps back. Principal stays at 32.00.</sub>
@@ -38,7 +59,9 @@ Evergreen makes that NFT *do something*: it stakes its own NEAR, and a small con
 ```yaml
 project: Evergreen
 track: NFTs That Do Something (also Open Innovation)
-one_liner: A NEAR Name (NFT + account) that renews its own yearly Lease from its own staking rewards; principal untouched.
+one_liner: An NFT with its own bank account. A NEAR Name (NEP-171 token + real account) stakes its own NEAR, earns, and pays its own yearly Rent from rewards; principal untouched; owned by a contract, returnable to the human at any time.
+nft_angle: the token is the economic actor (holds funds, stakes in its own name, pays for its own existence, can be crowdfunded, agent-operable); not a cosmetic NFT
+nft_proof: registry.sachindraz.testnet nft_token {"token_id":"evergreen.ev.sachindraz.testnet"} → owner_id is the Steward contract
 verify:
   requires: [node>=22, pnpm]          # no Rust, no keys, no wallet, no network accounts
   commands: [pnpm install, pnpm test, pnpm demo]

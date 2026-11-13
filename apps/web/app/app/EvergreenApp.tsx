@@ -178,8 +178,8 @@ function AppBody() {
             Rent a Name. Let it <em>keep itself.</em>
           </h1>
           <p className="section-lede">
-            Rent a NEAR Name, stake NEAR on it, and its Steward pays the Rent from the rewards every year. The rest of the
-            rewards stay staked, and yours. Take it back whenever you like.
+            A NEAR Name is an NFT that is also an account. Rent one, give it NEAR to stake, and it pays its own Rent from
+            the rewards every year. The rest of the rewards stay staked, and yours. Take it back whenever you like.
           </p>
           <Disclosure />
         </section>

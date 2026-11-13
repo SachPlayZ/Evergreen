@@ -92,7 +92,7 @@ export function Hero() {
         <h1>
           <Line delay={0.1}>Names expire.</Line>
           <Line delay={0.22}>
-            This one <em>renews itself.</em>
+            This NFT <em>pays its own rent.</em>
           </Line>
         </h1>
         <motion.div
@@ -101,7 +101,7 @@ export function Hero() {
           transition={{ duration: 0.8, delay: 0.6, ease: EASE }}
         >
           <p className="lede">
-            A Steward contract owns your NEAR name, stakes its NEAR, and pays each year&apos;s Rent from the rewards.
+            Your NEAR Name is an NFT with its own bank account. It stakes its own NEAR, earns, and pays each year&apos;s Rent from the rewards. The principal is never spent.
           </p>
           <div className="hero-actions">
             <a className="btn" href="#live">

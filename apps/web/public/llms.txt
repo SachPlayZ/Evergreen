@@ -1,6 +1,6 @@
 # Evergreen
 
-> NEAR Top Level Account Names (NFTs that are also accounts) now expire after a one-year Lease. An Evergreen Name is owned by a Steward contract that stakes the Name's own NEAR and pays its yearly Rent from the staking rewards only. The principal is never spent. Built at NEAR HACKATHON (Nov 2026), track "NFTs That Do Something".
+> An NFT with its own bank account. NEAR Top Level Account Names are NEP-171 tokens that are also real accounts, and they now expire after a one-year Lease. An Evergreen Name is owned by a Steward contract; the NFT stakes its own NEAR in its own name and pays its yearly Rent from the staking rewards only. The principal is never spent. Anyone can fund it, anyone can keep it renewing, and the owner can take it back (with its money and stake) at any time. Built at NEAR HACKATHON (Nov 2026), track "NFTs That Do Something".
 
 Source: https://github.com/SachPlayZ/Evergreen (MIT). Start with README.md and AGENTS.md there.
 

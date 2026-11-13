@@ -1,6 +1,6 @@
 # For agents reviewing or working on Evergreen
 
-Evergreen makes a NEAR Top Level Account Name (an NFT that is also an account) keep itself alive: a Steward contract owns the Name and pays its Rent from staking rewards. Terms: `GLOSSARY.md`. Decisions: `docs/adr/`.
+Evergreen turns an NFT into an economic agent. A NEAR Top Level Account Name is a NEP-171 token that is also a real account; with Evergreen the token holds its own NEAR, stakes it in its own name, and pays its own yearly Rent from the rewards (principal never spent). A Steward contract is the NFT's owner and returns it, money and stake included, on `exit`. This is the project's core claim for the "NFTs That Do Something" track. Terms: `GLOSSARY.md`. Decisions: `docs/adr/`.
 
 ## Verify it
 

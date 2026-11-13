@@ -5,6 +5,7 @@ import { Lapse } from "./components/Lapse";
 import { LiveProvider } from "./components/LiveData";
 import { LiveNames } from "./components/LiveNames";
 import { Parallax, SmoothScroll } from "./components/Motion";
+import { NftAgent } from "./components/NftAgent";
 import { UseIt } from "./components/UseIt";
 import Link from "next/link";
 
@@ -28,6 +29,7 @@ export default function Home() {
           Evergreen
         </a>
         <div className="nav-links">
+          <a href="#nft">The NFT</a>
           <a href="#live">Live</a>
           <a href="#how">How it works</a>
           <a href="#mainnet">Mainnet</a>
@@ -43,6 +45,7 @@ export default function Home() {
       <div id="top" />
       <Hero />
       <main>
+        <NftAgent />
         <LiveNames />
         <HowScroll />
         <Lapse />

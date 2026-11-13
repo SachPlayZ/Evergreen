@@ -1,6 +1,6 @@
 # Evergreen: agent guide
 
-Use this to manage NEAR Names (Top Level Accounts) on **NEAR testnet** with Evergreen: rent a Name, make it renew itself from staking rewards, and manage its NEAR and Stake. Human UI for the same actions: https://evergreen-names.vercel.app/app
+A NEAR Name is a NEP-171 NFT (`registry.nft_token`) that is also a real account. Evergreen makes that NFT self-sustaining: it holds and stakes its own NEAR and pays its own Rent. Use this to manage such NFTs on **NEAR testnet**: rent a Name, make it renew itself from staking rewards, and manage its NEAR and Stake. Human UI for the same actions: https://evergreen-names.vercel.app/app
 
 - Evergreen is **not** the rental service. Names are leased from House of Stake's Top Level Accounts registry (https://github.com/houseofstake/tla-contracts). On testnet that registry is an unmodified copy at `registry.sachindraz.testnet`, because House of Stake's own testnet registry is paused (stale price oracle).
 - Testnet only. The Steward contract is new and unaudited.
