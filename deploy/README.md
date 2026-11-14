@@ -25,6 +25,8 @@ cf r2 buckets create evergreen-nft-cards
 cd apps/cards && cf deploy
 ```
 
+CI redeploys it on every change under `apps/cards` ([`deploy-cards.yml`](../.github/workflows/deploy-cards.yml)) once the repo has a `CLOUDFLARE_API_TOKEN` secret (dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template, zone `evergreennfts.space`).
+
 ### Continuous deploy
 
 Every push to `main` that passes `ci` runs [`deploy-keeper.yml`](../.github/workflows/deploy-keeper.yml): it SSHes to the VM and runs [`update.sh`](update.sh) (pull, install if the lockfile changed, refresh units, restart both keepers and the gateway; never the chain). The CI key can run only that script. One-time setup from your machine:

@@ -1,0 +1,45 @@
+name: deploy cards
+# Deploys the evergreen-cards Worker (apps/cards → cards.evergreennfts.space) when it changes on main.
+# Needs repository secrets CLOUDFLARE_API_TOKEN ("Edit Cloudflare Workers" template, zone evergreennfts.space)
+# and CLOUDFLARE_ACCOUNT_ID. Skips (green) until the token exists.
+on:
+  push:
+    branches: [main]
+    paths: [apps/cards/**, .github/workflows/deploy-cards.yml]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cards
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CF_SEND_TELEMETRY: "false"
+      HAS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    steps:
+      - if: env.HAS_TOKEN != 'true'
+        run: echo "::notice::CLOUDFLARE_API_TOKEN not set; skipping cards deploy."
+      - if: env.HAS_TOKEN == 'true'
+        uses: actions/checkout@v4
+      - if: env.HAS_TOKEN == 'true'
+        uses: pnpm/action-setup@v4
+      - if: env.HAS_TOKEN == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - if: env.HAS_TOKEN == 'true'
+        run: pnpm install --frozen-lockfile --filter @evergreen-names/cards
+      - if: env.HAS_TOKEN == 'true'
+        name: cf deploy
+        working-directory: apps/cards
+        run: npx cf deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - if: env.HAS_TOKEN == 'true'
+        name: Card endpoint answers
+        run: curl -sf -o /dev/null https://cards.evergreennfts.space/evergreen.png
