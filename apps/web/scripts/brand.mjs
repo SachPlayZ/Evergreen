@@ -135,11 +135,6 @@ const banner = (w, ht) =>
           h("span", null, "Names expire."),
           h("span", { style: { display: "flex" } }, "This NFT ", h("span", { style: { fontStyle: "italic", color: LEAF } }, "pays its own rent.")),
         ),
-        h(
-          "div",
-          { style: { fontSize: 28, lineHeight: 1.35, color: MUTED, maxWidth: 560 } },
-          "An NFT with its own bank account. It stakes, earns, and pays its own Rent.",
-        ),
       ),
       h("div", { style: { fontSize: 24, color: MUTED } }, "evergreennfts.space"),
     ),
