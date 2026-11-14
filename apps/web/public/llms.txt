@@ -36,7 +36,7 @@ pnpm evergreen testnet tip mybot 1 --account you.testnet
 pnpm evergreen testnet exit mybot --account you.testnet
 ```
 
-Tested from a brand-new faucet account: hello.ev.sachindraz.testnet. Not on mainnet yet: the Steward is unaudited.
+Tested from a brand-new faucet account: hello.ev.sachindraz.testnet (early Steward) and gift.ev.sachindraz.testnet (made Evergreen by sending the NFT: https://evergreennfts.space/nft/gift). /api/names reports steward.code "legacy" for early Stewards, whose exit leaves the Name's plain NEAR on the Steward. Not on mainnet yet: the Steward is unaudited.
 
 ## Live data (JSON, no JavaScript needed)
 

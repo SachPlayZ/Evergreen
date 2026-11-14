@@ -348,6 +348,11 @@ function NameCard({ n, me, act, readOnly }: { n: NameView; me: string; act: Act;
           <code>{n.name}</code>
         </a>
         <span className={`pill is-${n.status}`}>{n.evergreen ? "Evergreen" : n.status}</span>
+        {n.steward?.code === "legacy" && (
+          <span className="pill" title="Made Evergreen before the exit fix: taking it back leaves the Name's plain NEAR on the Steward.">
+            early Steward
+          </span>
+        )}
       </header>
 
       <dl className="name-stats">
@@ -449,7 +454,11 @@ function NameCard({ n, me, act, readOnly }: { n: NameView; me: string; act: Act;
       )}
       {open === "exit" && (
         <Confirm
-          text="The Name comes back to you with everything on it: its plain NEAR (withdraw it here) and its Stake, still in the pool (unstake, then withdraw). Auto-renewal stops until you hand it back."
+          text={
+            n.steward?.code === "legacy"
+              ? `This Name's Steward runs early Evergreen code. The Name and its Stake come back to you, but its ${fmt(n.balanceYocto)} NEAR of plain NEAR stays on the Steward, which cannot send it on. Auto-renewal stops until you hand it back.`
+              : "The Name comes back to you with everything on it: its plain NEAR (withdraw it here) and its Stake, still in the pool (unstake, then withdraw). Auto-renewal stops until you hand it back."
+          }
           cta="Take it back"
           onConfirm={() => act(`Take back ${n.name}`, [exitTx(n.stewardId)])}
         />

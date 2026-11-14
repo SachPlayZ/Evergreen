@@ -24,7 +24,7 @@ A NEAR Name is a NEP-171 NFT (`registry.nft_token`) that is also a real account.
 curl -s "https://evergreennfts.space/api/names?owner=you.testnet"
 ```
 
-Returns every Name `you.testnet` holds (directly, or through its own Steward): `status`, `secondsLeft`, `balanceYocto` (plain NEAR on the Name), `evergreen`, `steward` (`phase`, `principalYocto`, `stakedYocto`, `rewardsYocto`, `needYocto`, `renewals`), and `pool` (the Name's position in the pool, also after you take it back). 1 NEAR = 10^24 yocto.
+Returns every Name `you.testnet` holds (directly, or through its own Steward): `status`, `secondsLeft`, `balanceYocto` (plain NEAR on the Name), `evergreen`, `steward` (`phase`, `principalYocto`, `stakedYocto`, `rewardsYocto`, `needYocto`, `renewals`, `code`: `current` or `legacy`), and `pool` (the Name's position in the pool, also after you take it back). 1 NEAR = 10^24 yocto.
 
 Live card image of any Name (PNG, 1200×630, for sharing or showing the user): `https://evergreennfts.space/api/nft/<label or full name>.png`
 
@@ -88,3 +88,4 @@ Code for all of these as plain `{receiverId, actions}`: `packages/client/src/txs
 5. Evergreen Names renew themselves. Pay Rent by hand only if the Steward `phase` is `Evacuated` or the Lease is in Grace.
 6. After `exit`, the Stake is still the Name's, in the pool: `unstake_all`, wait ~4 epochs (~2 days, `is_account_unstaked_balance_available` = true), `withdraw`, then send NEAR out of the Name.
 7. To make a Name Evergreen again after `exit`, transfer it back to its existing Steward (don't create a second one).
+8. If `steward.code` is `legacy`, tell the user before `exit` that the Name's plain NEAR (`balanceYocto`) will stay on the Steward; the Name and its Stake still come back.

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/web/brand/banner.png" alt="Evergreen: NEAR names expire. This one renews itself." width="100%">
+  <img src="apps/web/brand/banner.png" alt="Evergreen: Names expire. This NFT pays its own rent." width="100%">
 </p>
 
 <p align="center">
@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/SachPlayZ/Evergreen/actions/workflows/ci.yml"><img src="https://github.com/SachPlayZ/Evergreen/actions/workflows/ci.yml/badge.svg" alt="ci"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-b6e04a" alt="MIT"></a>
-  <a href="https://evergreennfts.space"><img src="https://img.shields.io/badge/live-evergreen--names.vercel.app-b6e04a" alt="live demo"></a>
+  <a href="https://evergreennfts.space"><img src="https://img.shields.io/badge/live-evergreennfts.space-b6e04a" alt="live demo"></a>
   <img src="https://img.shields.io/badge/NEAR%20HACKATHON-NFTs%20That%20Do%20Something-ef5a2f" alt="track">
 </p>
 
@@ -225,7 +225,9 @@ pnpm evergreen testnet adopt mybot --account you.testnet --stake 3
 | Add to its Stake (a Lifeline; anyone can) | `pnpm evergreen testnet tip mybot 1 --account you.testnet` |
 | Take the Name back, Stake and all | `pnpm evergreen testnet exit mybot --account you.testnet` |
 
-**Tested with a brand-new faucet account on 14 Nov 2026** (the full lifecycle, rent → adopt → take back → withdraw → hand back, also runs in the sandbox test above): [`hello.ev.sachindraz.testnet`](https://testnet.nearblocks.io/address/hello.ev.sachindraz.testnet), Steward [`ev-hello-ev-sachindraz-testnet.evergreen-try-06844.testnet`](https://testnet.nearblocks.io/address/ev-hello-ev-sachindraz-testnet.evergreen-try-06844.testnet), 3 NEAR staked with `aurora.pool.f863973.m0`.
+**Tested with a brand-new faucet account on 14 Nov 2026** (the full lifecycle, rent → adopt → take back → withdraw → hand back, also runs in the sandbox test above): [`hello.ev.sachindraz.testnet`](https://testnet.nearblocks.io/address/hello.ev.sachindraz.testnet), Steward [`ev-hello-ev-sachindraz-testnet.evergreen-try-06844.testnet`](https://testnet.nearblocks.io/address/ev-hello-ev-sachindraz-testnet.evergreen-try-06844.testnet), 3 NEAR staked with `aurora.pool.f863973.m0`. The newest one, made Evergreen by sending the NFT (`nft_transfer_call`): [`gift.ev.sachindraz.testnet`](https://evergreennfts.space/nft/gift).
+
+> `hello` and `evergreen` were made Evergreen with an early Steward (its own wasm, before the exit fix): taking them back leaves the Name's plain NEAR on the Steward. The app marks them "early Steward" and says so before *Take it back*; `/api/names` reports `steward.code: "legacy"`. Every Steward made since runs the published global code (`evergreen-steward.testnet`).
 
 <details>
 <summary>From code instead of the CLI (TypeScript)</summary>

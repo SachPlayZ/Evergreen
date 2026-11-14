@@ -133,15 +133,15 @@ const banner = (w, ht) =>
           "div",
           { style: { display: "flex", flexDirection: "column", fontFamily: "Newsreader", fontSize: 68, lineHeight: 1.04, color: TEXT, letterSpacing: -1.5 } },
           h("span", null, "Names expire."),
-          h("span", { style: { display: "flex" } }, "This one ", h("span", { style: { fontStyle: "italic", color: LEAF } }, "renews itself.")),
+          h("span", { style: { display: "flex" } }, "This NFT ", h("span", { style: { fontStyle: "italic", color: LEAF } }, "pays its own rent.")),
         ),
         h(
           "div",
           { style: { fontSize: 28, lineHeight: 1.35, color: MUTED, maxWidth: 560 } },
-          "A NEAR Name whose Steward contract pays the Rent from staking rewards.",
+          "An NFT with its own bank account. It stakes, earns, and pays its own Rent.",
         ),
       ),
-      h("div", { style: { fontSize: 24, color: MUTED } }, "evergreen-names.vercel.app"),
+      h("div", { style: { fontSize: 24, color: MUTED } }, "evergreennfts.space"),
     ),
   );
 

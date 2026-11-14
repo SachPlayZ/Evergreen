@@ -23,6 +23,8 @@ export interface NameView {
     needYocto: string;
     renewals: number;
     tipCount: number;
+    /** "current": the published global Steward code. "legacy": an early Steward whose exit leaves the Name's plain NEAR on the Steward. */
+    code: "current" | "legacy";
   };
   /** The Name's own position in the pool: what a Steward staked for it, still there after you take it back. */
   pool?: { id: string; stakedYocto: string; unstakedYocto: string; available: boolean };
@@ -41,6 +43,16 @@ export async function balanceOf(accountId: string): Promise<string> {
   } catch {
     return "0";
   }
+}
+
+/** The global contract a Steward runs, if any (undefined for an account with its own wasm). */
+async function stewardCodeOf(accountId: string): Promise<string | undefined> {
+  const res = await fetch(NET.rpcUrl, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "view_account", finality: "final", account_id: accountId } }),
+  });
+  return (await res.json()).result?.global_contract_account_id;
 }
 
 /** Every Name in the namespace that `owner` holds, directly or through its own Steward. */
@@ -74,6 +86,7 @@ export async function namesOf(owner: string): Promise<NameView[]> {
           needYocto: s.needYocto.toString(),
           renewals: s.renewals.length,
           tipCount: s.tipCount,
+          code: (await stewardCodeOf(stewardId)) === NET.stewardCode ? "current" : "legacy",
         };
       }
       if (s) {
