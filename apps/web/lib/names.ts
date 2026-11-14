@@ -46,13 +46,15 @@ export async function balanceOf(accountId: string): Promise<string> {
 }
 
 /** The global contract a Steward runs, if any (undefined for an account with its own wasm). */
-async function stewardCodeOf(accountId: string): Promise<string | undefined> {
+/** "current" if the Steward runs today's code: the global copy, or its own copy of the same wasm. */
+async function stewardCodeOf(accountId: string): Promise<"current" | "legacy"> {
   const res = await fetch(NET.rpcUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "view_account", finality: "final", account_id: accountId } }),
   });
-  return (await res.json()).result?.global_contract_account_id;
+  const a = (await res.json()).result;
+  return a?.global_contract_account_id === NET.stewardCode || a?.code_hash === NET.stewardCodeHash ? "current" : "legacy";
 }
 
 /** Every Name in the namespace that `owner` holds, directly or through its own Steward. */
@@ -86,7 +88,7 @@ export async function namesOf(owner: string): Promise<NameView[]> {
           needYocto: s.needYocto.toString(),
           renewals: s.renewals.length,
           tipCount: s.tipCount,
-          code: (await stewardCodeOf(stewardId)) === NET.stewardCode ? "current" : "legacy",
+          code: await stewardCodeOf(stewardId),
         };
       }
       if (s) {

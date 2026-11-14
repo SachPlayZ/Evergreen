@@ -25,7 +25,26 @@ import { WalletProvider, useWallet } from "@/lib/wallet";
 import { AgentKit } from "./AgentKit";
 
 const YIELD = 0.05;
-const STEWARD_BALANCE = 0.3;
+/** Steward account balance: pays storage for its own copy of the code (~1.65 NEAR) and its state. */
+const STEWARD_BALANCE = 2;
+
+/**
+ * The Steward code, deployed per Steward. Browser wallets (Meteor, MyNearWallet, HOT, Intear) reject the
+ * UseGlobalContract action, so the app ships the same wasm; the CLI and agents can still use the global copy.
+ */
+let wasm: Promise<Uint8Array> | undefined;
+const stewardWasm = () =>
+  (wasm ??= fetch("/steward.wasm").then((r) => {
+    if (!r.ok) throw new Error(`steward.wasm ${r.status}`);
+    return r.arrayBuffer().then((b) => new Uint8Array(b));
+  }));
+function useStewardWasm() {
+  const [code, setCode] = useState<Uint8Array>();
+  useEffect(() => {
+    stewardWasm().then(setCode, () => (wasm = undefined));
+  }, []);
+  return code;
+}
 const NAME_BUFFER = 0.5;
 /** The Name wallet keeps a small storage reserve; leave this much when withdrawing. */
 const NAME_RESERVE = 0.05;
@@ -494,9 +513,11 @@ function Adopt({ n, me, act }: { n: NameView; me: string; act: Act }) {
   const yearly = y ? Number(stake) * YIELD : 0;
   const rentNear = rent ? Number(BigInt(rent) / 10n ** 16n) / 1e8 : 0;
   const total = (y ? Number(stake) : 0) + STEWARD_BALANCE + NAME_BUFFER;
+  const code = useStewardWasm();
   const txs = useMemo(
     () =>
       y &&
+      code &&
       adoptTxs({
         registryId: NET.registryId,
         name: n.name,
@@ -505,9 +526,10 @@ function Adopt({ n, me, act }: { n: NameView; me: string; act: Act }) {
         stakeYocto: y,
         windowSecs: NET.windowSecs,
         lapseGuardSecs: NET.lapseGuardSecs,
-        code: { globalAccountId: NET.stewardCode },
+        code: { wasm: code },
+        stewardBalanceYocto: BigInt(STEWARD_BALANCE * 10) * 10n ** 23n,
       }),
-    [y, n.name, me],
+    [y, code, n.name, me],
   );
   return (
     <div className="panel">

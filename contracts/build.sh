@@ -26,6 +26,8 @@ done
 
 if [ "${1:-}" = "--update" ]; then
   cp "$OUT"/*.wasm wasm/
+  # The web app deploys this copy per Steward; also update NET.stewardCodeHash in apps/web/lib/testnet.ts.
+  cp wasm/steward.wasm ../apps/web/public/steward.wasm
   (cd wasm && shasum -a 256 *.wasm > SHA256SUMS)
   echo "contracts/wasm updated."
   exit 0
