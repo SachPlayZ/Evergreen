@@ -46,7 +46,13 @@ export async function balanceOf(accountId: string): Promise<string> {
 }
 
 /** The global contract a Steward runs, if any (undefined for an account with its own wasm). */
-/** "current" if the Steward runs today's code: the global copy, or its own copy of the same wasm. */
+/**
+ * Where `owner`'s Steward for `name` can live: made by the factory (the app), or a sub-account of `owner`
+ * (CLI, agents, early app). Factory first.
+ */
+export const stewardIdsFor = (name: string, owner: string) => [stewardIdFor(name, owner, NET.stewardCode), stewardIdFor(name, owner)];
+
+/** "current" if the Steward runs today's global Steward code. */
 async function stewardCodeOf(accountId: string): Promise<"current" | "legacy"> {
   const res = await fetch(NET.rpcUrl, {
     method: "POST",
@@ -54,18 +60,24 @@ async function stewardCodeOf(accountId: string): Promise<"current" | "legacy"> {
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "view_account", finality: "final", account_id: accountId } }),
   });
   const a = (await res.json()).result;
-  return a?.global_contract_account_id === NET.stewardCode || a?.code_hash === NET.stewardCodeHash ? "current" : "legacy";
+  return a?.global_contract_account_id === NET.stewardCode ? "current" : "legacy";
 }
 
 /** Every Name in the namespace that `owner` holds, directly or through its own Steward. */
 export async function namesOf(owner: string): Promise<NameView[]> {
   const c = client();
-  const leases = (await c.listNames(NET.namespace, 500)).filter((l) => l.owner === owner || l.owner === stewardIdFor(l.name, owner));
+  const leases = (await c.listNames(NET.namespace, 500)).filter((l) => l.owner === owner || stewardIdsFor(l.name, owner).includes(l.owner));
   return Promise.all(
     leases.map(async (l): Promise<NameView> => {
-      const stewardId = stewardIdFor(l.name, owner);
+      // The Steward that owns it now, else one it had before (exited), else the one Make it Evergreen creates.
+      const ids = stewardIdsFor(l.name, owner);
+      const found = ids.includes(l.owner)
+        ? { id: l.owner, s: await c.getSteward(l.owner).catch(() => undefined) }
+        : (await Promise.all(ids.map(async (id) => ({ id, s: await c.getSteward(id).catch(() => undefined) })))).find((x) => x.s?.name === l.name);
+      const stewardId = found?.id ?? ids[0];
+      const s = found?.s;
       const evergreen = l.owner === stewardId;
-      const [balanceYocto, s] = await Promise.all([balanceOf(l.name), c.getSteward(stewardId).catch(() => undefined)]);
+      const balanceYocto = await balanceOf(l.name);
       const view_: NameView = {
         name: l.name,
         owner: l.owner,

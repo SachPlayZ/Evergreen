@@ -8,7 +8,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 UPSTREAM=(contracts/hos-wallet contracts/wallet-impl-deployer contracts/registrar contracts/hos-extension contracts/mpc-recovery contracts/tla-registry)
-OURS=(steward demo-pool)
+OURS=(steward steward-factory demo-pool)
 OUT=$(mktemp -d)
 
 for c in "${UPSTREAM[@]}"; do
@@ -26,8 +26,6 @@ done
 
 if [ "${1:-}" = "--update" ]; then
   cp "$OUT"/*.wasm wasm/
-  # The web app deploys this copy per Steward; also update NET.stewardCodeHash in apps/web/lib/testnet.ts.
-  cp wasm/steward.wasm ../apps/web/public/steward.wasm
   (cd wasm && shasum -a 256 *.wasm > SHA256SUMS)
   echo "contracts/wasm updated."
   exit 0

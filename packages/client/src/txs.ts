@@ -3,6 +3,7 @@
  * (`signAndSendTransactions`) or a near-api-js Account (`sendTxs`). No signing, no I/O, browser-safe.
  * One builder per action a Name owner can take; the CLI, the tests and the web app share them.
  */
+import { sha256 } from "@noble/hashes/sha2.js";
 import { actions, type Account } from "near-api-js";
 import { ONE_YOCTO, TGAS, TxError } from "./near";
 
@@ -12,8 +13,15 @@ export interface Tx {
   actions: Action[];
 }
 
-/** The Steward's code: a NEAR global contract published once (tiny tx), or the wasm itself (150 KB). */
-export type StewardCode = { globalAccountId: string } | { wasm: Uint8Array };
+/**
+ * How the Steward is created:
+ * - `factory`: one function call to the Steward factory (contracts/steward-factory), which creates it from the
+ *   global code. The only way that works in browser wallets: they refuse DeployContract (Meteor) or do not know
+ *   UseGlobalContract (Meteor, MyNearWallet, HOT, Intear).
+ * - `globalAccountId`: a sub-account of the Patron pointing at the global code (CLI, agents).
+ * - `wasm`: a sub-account of the Patron with its own copy of the code (150 KB; no global code needed).
+ */
+export type StewardCode = { factory: string } | { globalAccountId: string } | { wasm: Uint8Array };
 
 const WALLET_OVERHEAD = 20n * TGAS;
 const POOL_GAS = 30n * TGAS;
@@ -26,11 +34,22 @@ function split(name: string) {
 
 const call = (method: string, args: object, gas: bigint, deposit = 0n): Action => actions.functionCall(method, args, gas, deposit);
 
-/** The Steward account for a Name: a keyless sub-account of its Patron. */
-export function stewardIdFor(name: string, patronId: string): string {
+/**
+ * The Steward account for a Name: a keyless sub-account of its Patron, or with `factory`, the sub-account of the
+ * factory that `create_steward` makes: `<label>-<8 hex>.<factory>` (`<24 hex>.<factory>` past 64 chars), hex =
+ * sha256("<name>:<patron>"). Must match `derive_steward_id` in contracts/steward-factory.
+ */
+export function stewardIdFor(name: string, patronId: string, factory?: string): string {
   const { label, namespace } = split(name);
-  return `ev-${label}-${namespace.replace(/\./g, "-")}.${patronId}`;
+  if (!factory) return `ev-${label}-${namespace.replace(/\./g, "-")}.${patronId}`;
+  const hex = [...sha256(new TextEncoder().encode(`${name}:${patronId}`))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const short = `${label}-${hex.slice(0, 8)}.${factory}`;
+  return short.length <= 64 ? short : `${hex.slice(0, 24)}.${factory}`;
 }
+
+/** Where `adoptTxs` puts the Steward for this code choice. */
+export const stewardIdOf = (name: string, patronId: string, code: StewardCode) =>
+  stewardIdFor(name, patronId, "factory" in code ? code.factory : undefined);
 
 /** Rent a free Name. `totalYocto` is `get_rent_price(...).total_yocto` (Rent + account creation). */
 export function rentTx(registryId: string, name: string, totalYocto: bigint): Tx {
@@ -71,41 +90,41 @@ export function adoptTxs(o: {
   windowSecs: number;
   lapseGuardSecs: number;
   code: StewardCode;
-  /** NEAR left on the Steward account for its storage. Default 0.3 (global code) or 2 (own wasm). */
+  /** NEAR left on the Steward account for its storage. Default 0.3 (global code, factory) or 2 (own wasm). */
   stewardBalanceYocto?: bigint;
   /** Plain NEAR left on the Name next to the Stake. Default 0.5. */
   liquidBufferYocto?: bigint;
 }): Tx[] {
   const { label, namespace } = split(o.name);
-  const stewardId = stewardIdFor(o.name, o.patron);
-  const global = "globalAccountId" in o.code;
-  const balance = o.stewardBalanceYocto ?? (global ? 3n : 20n) * 10n ** 23n;
+  const stewardId = stewardIdOf(o.name, o.patron, o.code);
+  const ownCode = "wasm" in o.code;
+  const balance = o.stewardBalanceYocto ?? (ownCode ? 20n : 3n) * 10n ** 23n;
   const buffer = o.liquidBufferYocto ?? 5n * 10n ** 23n;
   const NS = 1_000_000_000n;
-  const code = "globalAccountId" in o.code ? actions.useGlobalContract({ accountId: o.code.globalAccountId }) : actions.deployContract(o.code.wasm);
+  const init = {
+    registry: o.registryId,
+    tla_id: namespace,
+    label,
+    pool: o.pool,
+    window_ns: (BigInt(o.windowSecs) * NS).toString(),
+    lapse_guard_ns: (BigInt(o.lapseGuardSecs) * NS).toString(),
+  };
+  // The Steward holds the Stake until the NFT arrives, then moves it onto the Name.
+  const deposit = balance + o.stakeYocto + buffer;
+  const create: Tx =
+    "factory" in o.code
+      ? { receiverId: o.code.factory, actions: [call("create_steward", init, 100n * TGAS, deposit)] }
+      : {
+          receiverId: stewardId,
+          actions: [
+            actions.createAccount(),
+            actions.transfer(deposit),
+            "wasm" in o.code ? actions.deployContract(o.code.wasm) : actions.useGlobalContract({ accountId: o.code.globalAccountId }),
+            call("new", { ...init, patron: o.patron }, 30n * TGAS),
+          ],
+        };
   return [
-    {
-      receiverId: stewardId,
-      actions: [
-        actions.createAccount(),
-        // The Steward holds the Stake until the NFT arrives, then moves it onto the Name.
-        actions.transfer(balance + o.stakeYocto + buffer),
-        code,
-        call(
-          "new",
-          {
-            registry: o.registryId,
-            tla_id: namespace,
-            label,
-            pool: o.pool,
-            patron: o.patron,
-            window_ns: (BigInt(o.windowSecs) * NS).toString(),
-            lapse_guard_ns: (BigInt(o.lapseGuardSecs) * NS).toString(),
-          },
-          30n * TGAS,
-        ),
-      ],
-    },
+    create,
     sendNftTx(o.registryId, o.name, stewardId, JSON.stringify({ stake: o.stakeYocto.toString() })),
   ];
 }

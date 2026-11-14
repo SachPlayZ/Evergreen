@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@noble/hashes": "2.4.0",
     "near-api-js": "7.5.2"
   },
   "devDependencies": {

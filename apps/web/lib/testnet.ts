@@ -8,10 +8,11 @@ export const NET = {
   namespace: "ev.sachindraz.testnet",
   /** A real testnet validator. */
   pool: "aurora.pool.f863973.m0",
-  /** The Steward contract, published once as a NEAR global contract; each new Steward points at it. */
+  /**
+   * Publishes the Steward as a NEAR global contract (each Steward points at it) and runs the Steward factory
+   * (contracts/steward-factory), which creates Stewards with one plain call any wallet can sign.
+   */
   stewardCode: "evergreen-steward.testnet",
-  /** sha256 (base58) of contracts/wasm/steward.wasm = apps/web/public/steward.wasm, which the app deploys per Steward. */
-  stewardCodeHash: "Ei5HXAc5Ed3wHpJaAwT9T8bRjDmLKRypY3vkGjHvM4u1",
   /** Renewal starts 30 days before expiry; if Rent is still not covered 3 days before, the Stake is pulled to safety. */
   windowSecs: 30 * 86_400,
   lapseGuardSecs: 3 * 86_400,

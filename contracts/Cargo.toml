@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["steward", "demo-pool"]
+members = ["steward", "steward-factory", "demo-pool"]
 exclude = ["upstream", "spike"]
 
 [workspace.dependencies]

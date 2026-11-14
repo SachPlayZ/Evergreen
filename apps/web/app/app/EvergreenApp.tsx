@@ -8,7 +8,6 @@ import {
   pokeTx,
   rentTx,
   renewTx,
-  stewardIdFor,
   tipTx,
   transferNameTx,
   unstakeAllTx,
@@ -25,26 +24,10 @@ import { WalletProvider, useWallet } from "@/lib/wallet";
 import { AgentKit } from "./AgentKit";
 
 const YIELD = 0.05;
-/** Steward account balance: pays storage for its own copy of the code (~1.65 NEAR) and its state. */
-const STEWARD_BALANCE = 2;
-
-/**
- * The Steward code, deployed per Steward. Browser wallets (Meteor, MyNearWallet, HOT, Intear) reject the
- * UseGlobalContract action, so the app ships the same wasm; the CLI and agents can still use the global copy.
- */
-let wasm: Promise<Uint8Array> | undefined;
-const stewardWasm = () =>
-  (wasm ??= fetch("/steward.wasm").then((r) => {
-    if (!r.ok) throw new Error(`steward.wasm ${r.status}`);
-    return r.arrayBuffer().then((b) => new Uint8Array(b));
-  }));
-function useStewardWasm() {
-  const [code, setCode] = useState<Uint8Array>();
-  useEffect(() => {
-    stewardWasm().then(setCode, () => (wasm = undefined));
-  }, []);
-  return code;
-}
+/** Steward account balance: its state only (it runs the global Steward code). */
+const STEWARD_BALANCE = 0.3;
+/** Browser wallets cannot deploy code, so a factory creates the Steward with one plain call. */
+const CODE = { factory: NET.stewardCode };
 const NAME_BUFFER = 0.5;
 /** The Name wallet keeps a small storage reserve; leave this much when withdrawing. */
 const NAME_RESERVE = 0.05;
@@ -513,11 +496,9 @@ function Adopt({ n, me, act }: { n: NameView; me: string; act: Act }) {
   const yearly = y ? Number(stake) * YIELD : 0;
   const rentNear = rent ? Number(BigInt(rent) / 10n ** 16n) / 1e8 : 0;
   const total = (y ? Number(stake) : 0) + STEWARD_BALANCE + NAME_BUFFER;
-  const code = useStewardWasm();
   const txs = useMemo(
     () =>
       y &&
-      code &&
       adoptTxs({
         registryId: NET.registryId,
         name: n.name,
@@ -526,16 +507,15 @@ function Adopt({ n, me, act }: { n: NameView; me: string; act: Act }) {
         stakeYocto: y,
         windowSecs: NET.windowSecs,
         lapseGuardSecs: NET.lapseGuardSecs,
-        code: { wasm: code },
-        stewardBalanceYocto: BigInt(STEWARD_BALANCE * 10) * 10n ** 23n,
+        code: CODE,
       }),
-    [y, code, n.name, me],
+    [y, n.name, me],
   );
   return (
     <div className="panel">
       <h3>2. Make it Evergreen</h3>
       <p className="small">
-        A Steward of your own (<code>{stewardIdFor(n.name, me)}</code>) takes the Name and stakes NEAR on it with{" "}
+        A Steward of your own (<code>{n.stewardId}</code>) takes the Name and stakes NEAR on it with{" "}
         <code>{NET.pool}</code>. When Rent is due it pays it from the rewards only. Your principal is never spent; rewards above
         Rent stay staked and are yours.
       </p>

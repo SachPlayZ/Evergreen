@@ -5,7 +5,7 @@
  */
 import { Account, JsonRpcProvider } from "near-api-js";
 import { ONE_YOCTO, TGAS, call, nearToYocto, provider, view } from "./near";
-import { adoptTxs, sendTxs, stewardIdFor, type StewardCode } from "./txs";
+import { adoptTxs, sendTxs, stewardIdOf, type StewardCode } from "./txs";
 
 export * from "./near";
 export * from "./txs";
@@ -326,7 +326,7 @@ export class Evergreen {
       liquidBufferYocto: options.liquidBufferYocto,
     });
     await sendTxs(patron, txs);
-    return stewardIdFor(name, patron.accountId);
+    return stewardIdOf(name, patron.accountId, code);
   }
 
   /** Anyone can poke a Steward. Returns the step it took, e.g. `not_due`, `unstaking`, `renewed`. */

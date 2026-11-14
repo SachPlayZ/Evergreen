@@ -11,8 +11,8 @@ export function agentPrompt(account = "<you.testnet>") {
 
 Context
 - A Name like mybot.${NET.namespace} is a NEP-171 NFT (${NET.registryId} nft_token) and a real NEAR account: the NFT holds its own NEAR and, with Evergreen, stakes it in its own name and pays its own Rent. It is leased for 1 year from House of Stake's Top Level Accounts registry (${NET.registryId}; Evergreen is not the rental service).
-- Evergreen adds a Steward contract per Name (account ev-<label>-${NET.namespace.replace(/\./g, "-")}.<owner>). It owns the Name, stakes NEAR on it with ${NET.pool}, and pays Rent from staking rewards only; principal is never spent. Owner can take it back any time.
-- RPC ${NET.rpcUrl}. Explorer ${NET.explorer}. Steward code: global contract ${NET.stewardCode}.
+- Evergreen adds a Steward contract per Name (made by the factory ${NET.stewardCode} create_steward, account <label>-<8 hex>.${NET.stewardCode}; or by the owner, ev-<label>-${NET.namespace.replace(/\./g, "-")}.<owner>). It owns the Name, stakes NEAR on it with ${NET.pool}, and pays Rent from staking rewards only; principal is never spent. Owner can take it back any time.
+- RPC ${NET.rpcUrl}. Explorer ${NET.explorer}. Steward code: global contract ${NET.stewardCode}, which is also the Steward factory.
 - Read state as JSON: GET ${SITE}/api/names?owner=${account}  (Names, Lease, NEAR on the Name, Stake, rewards, phase, pool position).
 - Full method reference: ${SITE}/agents.md
 

@@ -13,8 +13,8 @@ A NEAR Name is a NEP-171 NFT (`registry.nft_token`) that is also a real account.
 | Registry | `registry.sachindraz.testnet` |
 | Namespace (open, anyone may rent) | `ev.sachindraz.testnet` → Names look like `mybot.ev.sachindraz.testnet` |
 | Staking pool | `aurora.pool.f863973.m0` |
-| Steward code (NEAR global contract) | `evergreen-steward.testnet` |
-| Steward account for a Name | `ev-<label>-ev-sachindraz-testnet.<owner>` e.g. `ev-mybot-ev-sachindraz-testnet.you.testnet` |
+| Steward code (NEAR global contract) and Steward factory | `evergreen-steward.testnet` |
+| Steward account for a Name | made by the factory (the app): `<label>-<8 hex>.evergreen-steward.testnet`, from `evergreen-steward.testnet` view `steward_id {"label","tla_id","patron"}`; or made by the owner (CLI): `ev-<label>-ev-sachindraz-testnet.<owner>`. The Name's owner tells you which. |
 | Renewal window / lapse guard | 30 days / 3 days before expiry |
 | Explorer | `https://testnet.nearblocks.io/address/<account>` |
 
@@ -74,8 +74,8 @@ Or raw transactions (near-cli-rs: `near contract call-function as-transaction <r
 
 **Make it Evergreen** = two transactions, signed by the current owner (the patron). The second one is a plain NEP-171 transfer of the NFT:
 
-1. To `ev-mybot-ev-sachindraz-testnet.you.testnet`: `CreateAccount`, `Transfer` 0.3 NEAR + stake + 0.5 NEAR, `UseGlobalContract {accountId: "evergreen-steward.testnet"}`, `FunctionCall new {"registry":"registry.sachindraz.testnet","tla_id":"ev.sachindraz.testnet","label":"mybot","pool":"aurora.pool.f863973.m0","patron":"you.testnet","window_ns":"2592000000000000","lapse_guard_ns":"259200000000000"}` (30 Tgas).
-2. Registry `nft_transfer_call {"receiver_id":"ev-mybot-ev-sachindraz-testnet.you.testnet","token_id":"mybot.ev.sachindraz.testnet","msg":"{\"stake\":\"<stake yocto>\"}"}` (1 yocto, 300 Tgas). The Steward's `nft_on_transfer` moves its spare NEAR onto the Name and stakes `stake`. It hands back any other NFT or sender.
+1. Either `evergreen-steward.testnet` `create_steward {"registry":"registry.sachindraz.testnet","tla_id":"ev.sachindraz.testnet","label":"mybot","pool":"aurora.pool.f863973.m0","window_ns":"2592000000000000","lapse_guard_ns":"259200000000000"}`, deposit 0.3 NEAR + stake + 0.5 NEAR, 100 Tgas (one plain call: what the app does, works in every wallet; you become the patron; refunded if it fails). Or, signing with a key (browser wallets refuse this), to `ev-mybot-ev-sachindraz-testnet.you.testnet`: `CreateAccount`, `Transfer` 0.3 NEAR + stake + 0.5 NEAR, `UseGlobalContract {accountId: "evergreen-steward.testnet"}`, `FunctionCall new {"registry":"registry.sachindraz.testnet","tla_id":"ev.sachindraz.testnet","label":"mybot","pool":"aurora.pool.f863973.m0","patron":"you.testnet","window_ns":"2592000000000000","lapse_guard_ns":"259200000000000"}` (30 Tgas).
+2. Registry `nft_transfer_call {"receiver_id":"<the Steward from step 1>","token_id":"mybot.ev.sachindraz.testnet","msg":"{\"stake\":\"<stake yocto>\"}"}` (1 yocto, 300 Tgas). The Steward's `nft_on_transfer` moves its spare NEAR onto the Name and stakes `stake`. It hands back any other NFT or sender.
 
 Code for all of these as plain `{receiverId, actions}`: `packages/client/src/txs.ts` in the repo.
 

@@ -89,7 +89,7 @@ Needs **Node 22+** and **pnpm**. Everything runs on a local NEAR sandbox (a real
 
 ```bash
 pnpm install
-pnpm test    # ~3 min · 9 scenarios through the TypeScript client against a local NEAR chain
+pnpm test    # ~3 min · 10 scenarios through the TypeScript client against a local NEAR chain
 pnpm demo    # ~2.5 min · the whole story end to end · PASS/FAIL per claim · exits non-zero on any FAIL
 ```
 
@@ -208,7 +208,7 @@ pnpm evergreen testnet rent mybot --account you.testnet
 # mybot.ev.sachindraz.testnet is yours: an NFT and a real account, Lease ends in 365 days.
 ```
 
-**2. Make it Evergreen.** Two transactions you sign: create your Steward (holding the Stake), then send it the NFT with `nft_transfer_call`. The Steward's `nft_on_transfer` moves the Stake onto the Name and stakes it, in the same call. About 3.8 NEAR: 3 staked (your principal, never spent), 0.3 for the Steward account (its code is the published global contract `evergreen-steward.testnet`, so nothing big is deployed), 0.5 left liquid on the Name.
+**2. Make it Evergreen.** Two transactions you sign: create your Steward (holding the Stake), then send it the NFT with `nft_transfer_call`. The Steward's `nft_on_transfer` moves the Stake onto the Name and stakes it, in the same call. About 3.8 NEAR: 3 staked (your principal, never spent), 0.3 for the Steward account, 0.5 left liquid on the Name. The first transaction is one plain call to the Steward factory ([`contracts/steward-factory`](contracts/steward-factory)), which creates the Steward from the published global contract `evergreen-steward.testnet`: browser wallets refuse to deploy code for apps, so this is what lets any wallet do it.
 
 ```bash
 pnpm evergreen testnet adopt mybot --account you.testnet --stake 3
@@ -351,7 +351,7 @@ Rent is priced in dollars by the registry. At ~5% staking yield, **~$150 staked 
 | | |
 | --- | --- |
 | **Real, unmodified** | House of Stake registry, wallet, registrar, extension, recovery: built from [`contracts/upstream`](contracts/upstream) @ `d85860a` (mainnet version) and @ `d12a84b` (their testnet version, [`contracts/wasm/d12a84b`](contracts/wasm/d12a84b)). Checksums verified in CI. |
-| **New (this hackathon), unaudited** | [`contracts/steward`](contracts/steward) (Rust, near-sdk), the TypeScript client, CLI, keeper and page. |
+| **New (this hackathon), unaudited** | [`contracts/steward`](contracts/steward) and [`contracts/steward-factory`](contracts/steward-factory) (Rust, near-sdk), the TypeScript client, CLI, keeper and page. |
 | **Demo-only** | On the hosted/local chain: 60-second Leases and Grace (real: 1 year / 14 days), and [`contracts/demo-pool`](contracts/demo-pool), which pays rewards on demand and releases unstaked NEAR at once (real pools: ~5%/yr, 4-epoch delay). The keeper also plays the price oracle there. On testnet: Rent is set to $0.00001/yr so one epoch of real rewards covers it. |
 | **Why our own testnet registry** | House of Stake's testnet registries can't rent right now (their price oracle stopped updating on 7 Oct 2026, so every rent fails `rate_stale`). We deployed their exact testnet version, unmodified, and every Name's wallet runs their published wallet code (`impl.hosdemo.testnet`). Reproduce: `pnpm evergreen testnet deploy --account you.testnet` (~17 testnet NEAR). |
 
@@ -386,6 +386,7 @@ flowchart TB
 | Path | What |
 | --- | --- |
 | [`contracts/steward`](contracts/steward) | The Steward contract (Rust, near-sdk) |
+| [`contracts/steward-factory`](contracts/steward-factory) | Creates a Steward with one plain call (any wallet) |
 | [`contracts/demo-pool`](contracts/demo-pool) | Demo staking pool (sandbox only) |
 | [`contracts/upstream`](contracts/upstream) | House of Stake Top Level Accounts contracts (submodule, never modified) |
 | [`contracts/wasm`](contracts/wasm) | Prebuilt wasm + SHA256SUMS, so no Rust is needed to verify |
@@ -402,7 +403,7 @@ Terms: [GLOSSARY.md](GLOSSARY.md) · Decisions: [docs/adr](docs/adr) · Agent no
 | Command | Does |
 | --- | --- |
 | `pnpm demo` | Whole story on a fresh sandbox, PASS/FAIL per claim |
-| `pnpm test` | 9 scenarios (vitest) against a fresh sandbox |
+| `pnpm test` | 10 scenarios (vitest) against a fresh sandbox |
 | `pnpm typecheck` | TypeScript across the workspace |
 | `pnpm evergreen sandbox --story` | Long-running local chain with alice/bob |
 | `pnpm evergreen keeper run` | Pokes Stewards when Rent is due |

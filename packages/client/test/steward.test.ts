@@ -1,6 +1,6 @@
 /** Evergreen Names: a Steward owns the Name and keeps it alive. Sandbox, 60-second Leases, DEMO pool. */
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { startSandbox, type EvergreenSandbox } from "@evergreen-names/sandbox";
+import { startSandbox, wasm, type EvergreenSandbox } from "@evergreen-names/sandbox";
 import { adoptTxs, nearToYocto, sendNftTx, sendTxs, stewardIdFor, unstakeAllTx, withdrawFromPoolTx, withdrawFromNameTx } from "../src/index";
 
 let sb: EvergreenSandbox;
@@ -188,4 +188,38 @@ test("sending the NFT to its Steward is what makes it Evergreen: the Stake moves
   expect(s.principalYocto).toBe(stake);
   expect(await sb.balanceOf(name)).toBeGreaterThanOrEqual(nearToYocto("0.5"));
   expect(await sb.balanceOf(stewardId)).toBeLessThan(nearToYocto("0.3"));
+});
+
+test("in a browser wallet: one plain call to the Steward factory, then the NFT; a failed create refunds", async () => {
+  // Wallets refuse DeployContract / UseGlobalContract from apps, so the factory (on the account that publishes the
+  // global Steward code) creates the Steward. The code was published by an earlier test.
+  const code = sb.account("code");
+  await code.deployContract(wasm("steward_factory"));
+  const ana = sb.account("ana");
+  const name = "wallet.demo";
+  await sb.client.rent(ana, name);
+  const stake = nearToYocto(2);
+  const stewardId = await sb.client.adopt(ana, name, {
+    pool: sb.poolId,
+    stakeYocto: stake,
+    stewardCode: { factory: "code" },
+    windowSecs: WINDOW,
+    lapseGuardSecs: GUARD,
+  });
+  // Same id in TypeScript and in the contract.
+  expect(stewardId).toBe(stewardIdFor(name, "ana", "code"));
+  expect(await sb.client.rpc.callFunction({ contractId: "code", method: "steward_id", args: { label: "wallet", tla_id: "demo", patron: "ana" } })).toBe(stewardId);
+  const s = await sb.client.getSteward(stewardId);
+  expect(s.lease.owner).toBe(stewardId);
+  expect(s.stakedYocto).toBe(stake);
+
+  // Creating it twice fails (the account exists) and the deposit comes back.
+  const before = await sb.balanceOf("ana");
+  const [again] = adoptTxs({ registryId: sb.registryId, name, patron: "ana", pool: sb.poolId, stakeYocto: stake, windowSecs: WINDOW, lapseGuardSecs: GUARD, code: { factory: "code" } });
+  await sendTxs(ana, [again]).catch(() => {});
+  expect(await sb.balanceOf("ana")).toBeGreaterThan(before - nearToYocto("0.05"));
+
+  // The Patron takes it back as usual.
+  await sb.client.exit(ana, stewardId);
+  expect((await sb.client.getLease(name))!.owner).toBe("ana");
 });

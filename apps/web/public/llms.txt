@@ -9,7 +9,7 @@ Source: https://github.com/SachPlayZ/Evergreen (MIT). Start with README.md and A
 ```bash
 git clone --recursive https://github.com/SachPlayZ/Evergreen && cd Evergreen
 pnpm install
-pnpm test    # 9 scenarios against a local NEAR sandbox, ~3 min
+pnpm test    # 10 scenarios against a local NEAR sandbox, ~3 min
 pnpm demo    # whole story, PASS/FAIL per claim, exits non-zero on any FAIL, ~2.5 min
 ```
 

@@ -4,9 +4,8 @@
  */
 import { ImageResponse } from "next/og";
 import { connection } from "next/server";
-import { stewardIdFor } from "@evergreen-names/client";
 import { willowGeometry } from "@/app/components/Willow";
-import { client } from "@/lib/names";
+import { client, stewardIdsFor } from "@/lib/names";
 import { NET, validLabel } from "@/lib/testnet";
 
 const YEAR = 365 * 86400;
@@ -51,7 +50,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/nft/[name]">) {
   if (!lease) return new Response("no such Name", { status: 404 });
   const steward = await c.getSteward(lease.owner).catch(() => null);
   // Evergreen = the NFT's owner is the Steward its Patron derived for it (not just any contract).
-  const evergreen = !!steward && steward.name === name && lease.owner === stewardIdFor(name, steward.patron);
+  const evergreen = !!steward && steward.name === name && stewardIdsFor(name, steward.patron).includes(lease.owner);
   const alive = lease.status === "active" || lease.status === "grace";
   const days = Math.max(0, Math.floor(lease.secondsLeft / 86400));
   const label = name.slice(0, -NET.namespace.length - 1);

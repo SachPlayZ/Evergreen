@@ -1,0 +1,12 @@
+[package]
+name = "steward-factory"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Creates Stewards (global code) with one function call (unaudited)"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = { workspace = true }
