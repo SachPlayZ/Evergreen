@@ -16,10 +16,10 @@ import {
   type Tx,
 } from "@evergreen-names/client";
 import { ArrowUpRight, Check, CircleNotch, Leaf, SignOut, Warning, Wallet } from "@phosphor-icons/react";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { balanceOf, client, namesOf, priceOf, type NameView } from "@/lib/names";
 import { NET, explorerAccount, explorerTx, validLabel } from "@/lib/testnet";
-import { SITE, sharePage } from "@/lib/site";
+import { SITE, cardImage, sharePage } from "@/lib/site";
 import { WalletProvider, useWallet } from "@/lib/wallet";
 import { AgentKit } from "./AgentKit";
 
@@ -43,11 +43,27 @@ const parseNear = (s: string) => {
 };
 
 /** An X post linking the Name's share page; X previews it with the card from R2. */
-const shareOnX = (name: string) => {
-  const label = name.slice(0, -(NET.namespace.length + 1));
+const labelOf = (name: string) => name.slice(0, -(NET.namespace.length + 1));
+/** `v` makes X fetch the card afresh, instead of reusing one it cached before the image was ready. */
+const shareOnX = (name: string, v = "") => {
+  const label = labelOf(name);
   const text = `My NFT pays its own rent. ${label} stakes its own NEAR and renews itself, forever. Built on NEAR with Evergreen.`;
-  return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(sharePage(label))}`;
+  const url = v ? `${sharePage(label)}?v=${v}` : sharePage(label);
+  return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
 };
+/**
+ * X gives a link card a few seconds to fetch its image, and caches the card without it if that runs out.
+ * A Name's first card is drawn on demand (1-4 s), so draw it before X asks: open the tab now (no popup
+ * block), warm the card, then send the tab to X.
+ */
+async function shareCard(e: MouseEvent<HTMLAnchorElement>, name: string) {
+  e.preventDefault();
+  const tab = window.open("about:blank", "_blank");
+  await Promise.race([fetch(cardImage(labelOf(name)), { mode: "no-cors" }).catch(() => {}), new Promise((r) => setTimeout(r, 8000))]);
+  const href = shareOnX(name, Date.now().toString(36));
+  if (tab) tab.location.href = href;
+  else window.location.href = href;
+}
 
 export function EvergreenApp() {
   return (
@@ -408,7 +424,7 @@ function NameCard({ n, me, act, readOnly }: { n: NameView; me: string; act: Act;
           Live NFT card <ArrowUpRight aria-hidden="true" />
         </a>
         {" · "}
-        <a href={shareOnX(n.name)} target="_blank" rel="noreferrer">
+        <a href={shareOnX(n.name)} target="_blank" rel="noreferrer" onClick={(e) => shareCard(e, n.name)}>
           Share on X <ArrowUpRight aria-hidden="true" />
         </a>
       </p>

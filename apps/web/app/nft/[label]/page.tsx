@@ -7,7 +7,7 @@ import { APP_URL, SITE, cardImage, sharePage } from "@/lib/site";
 import { NET, explorerAccount, validLabel } from "@/lib/testnet";
 import "../../app/app.css";
 
-type Props = { params: Promise<{ label: string }> };
+type Props = { params: Promise<{ label: string }>; searchParams: Promise<{ v?: string }> };
 
 // Blocking on purpose: link-preview crawlers (X) need the og:image in the first HTML, not a stream.
 export const instant = false;
@@ -17,12 +17,14 @@ const clean = (raw: string) => {
   return validLabel(label) ? label : null;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const label = clean((await params).label);
+  // A share link carries ?v=; passing it on gives X a new image URL, so it never reuses a failed fetch.
+  const v = (await searchParams).v?.replace(/[^a-z0-9]/gi, "").slice(0, 16);
   if (!label) return { title: "Evergreen NFT" };
   const title = `${label}: an NFT that pays its own rent`;
   const description = `${label}.${NET.namespace} is a NEAR Name (a NEP-171 NFT that is also an account). It stakes its own NEAR and renews itself from the rewards. Principal never spent.`;
-  const image = { url: cardImage(label), width: 1200, height: 630, alt: `Live card of ${label}.${NET.namespace}` };
+  const image = { url: v ? `${cardImage(label)}?v=${v}` : cardImage(label), width: 1200, height: 630, alt: `Live card of ${label}.${NET.namespace}` };
   return {
     title,
     description,
